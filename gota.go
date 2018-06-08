@@ -31,6 +31,20 @@ const (
 	T3MA
 )
 
+var _ints = [...]dec.Decimal {
+  dec.NewFromFloat(0.0),
+  dec.NewFromFloat(1.0),
+  dec.NewFromFloat(2.0),
+  dec.NewFromFloat(3.0),
+  dec.NewFromFloat(4.0),
+  dec.NewFromFloat(5.0),
+  dec.NewFromFloat(6.0),
+  dec.NewFromFloat(7.0),
+  dec.NewFromFloat(8.0),
+  dec.NewFromFloat(9.0),
+  dec.NewFromFloat(10.0),
+}
+
 /* Overlap Studies */
 
 // BBands - Bollinger Bands
@@ -41,11 +55,11 @@ func BBands(inReal []dec.Decimal, inTimePeriod int, inNbDevUp dec.Decimal, inNbD
 	outRealMiddleBand := Ma(inReal, inTimePeriod, inMAType)
 	outRealLowerBand := make([]dec.Decimal, len(inReal))
 
-	tempBuffer2 := StdDev(inReal, inTimePeriod, dec.NewFromFloat(1.0))
+	tempBuffer2 := StdDev(inReal, inTimePeriod, _ints[1])
 
 	if inNbDevUp == inNbDevDn {
 
-		if inNbDevUp == dec.NewFromFloat(1.0) {
+		if inNbDevUp.Equal(_ints[1]) {
 			for i := 0; i < len(inReal); i++ {
 				tempReal := tempBuffer2[i]
 				tempReal2 := outRealMiddleBand[i]
@@ -60,14 +74,14 @@ func BBands(inReal []dec.Decimal, inTimePeriod int, inNbDevUp dec.Decimal, inNbD
 				outRealLowerBand[i] = tempReal2.Sub(tempReal)
 			}
 		}
-	} else if inNbDevUp == dec.NewFromFloat(1.0) {
+	} else if inNbDevUp.Equal(_ints[1]) {
 		for i := 0; i < len(inReal); i++ {
 			tempReal := tempBuffer2[i]
 			tempReal2 := outRealMiddleBand[i]
 			outRealUpperBand[i] = tempReal2.Add(tempReal)
 			outRealLowerBand[i] = tempReal2.Sub(tempReal.Mul(inNbDevDn))
 		}
-	} else if inNbDevDn == dec.NewFromFloat(1.0) {
+	} else if inNbDevDn.Equal(_ints[1]) {
 		for i := 0; i < len(inReal); i++ {
 			tempReal := tempBuffer2[i]
 			tempReal2 := outRealMiddleBand[i]
@@ -93,7 +107,7 @@ func Dema(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 	secondEMA := Ema(firstEMA[inTimePeriod-1:], inTimePeriod)
 
 	for outIdx, secondEMAIdx := (inTimePeriod*2)-2, inTimePeriod-1; outIdx < len(inReal); outIdx, secondEMAIdx = outIdx+1, secondEMAIdx+1 {
-		outReal[outIdx] = (dec.NewFromFloat(2.0).Mul(firstEMA[outIdx])).Sub(secondEMA[secondEMAIdx])
+		outReal[outIdx] = (_ints[2].Mul(firstEMA[outIdx])).Sub(secondEMA[secondEMAIdx])
 	}
 
 	return outReal
@@ -110,7 +124,7 @@ func ema(inReal []dec.Decimal, inTimePeriod int, k1 dec.Decimal) []dec.Decimal {
 	startIdx := lookbackTotal
 	today := startIdx - lookbackTotal
 	i := inTimePeriod
-	tempReal := dec.NewFromFloat(0.0)
+	tempReal := _ints[0]
 	for i > 0 {
 		tempReal = tempReal.Add(inReal[today])
 		today++
@@ -139,7 +153,7 @@ func ema(inReal []dec.Decimal, inTimePeriod int, k1 dec.Decimal) []dec.Decimal {
 func Ema(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
   dec.DivisionPrecision = 8
-	k := dec.NewFromFloat(2.0).Div(dec.NewFromFloat(float64(inTimePeriod+1)))
+	k := _ints[2].Div(dec.NewFromFloat(float64(inTimePeriod+1)))
 	outReal := ema(inReal, inTimePeriod, k)
 	return outReal
 }
@@ -161,9 +175,9 @@ func HtTrendline(inReal []dec.Decimal) []dec.Decimal {
 	smoothPriceIdx := 0
 	maxIdxSmoothPrice := (50 - 1)
 	smoothPrice := make([]dec.Decimal, maxIdxSmoothPrice+1)
-	iTrend1 := dec.NewFromFloat(0.0)
-	iTrend2 := dec.NewFromFloat(0.0)
-	iTrend3 := dec.NewFromFloat(0.0)
+	iTrend1 := _ints[0]
+	iTrend2 := _ints[0]
+	iTrend3 := _ints[0]
 	tempReal := dec.NewFromFloat(math.Atan(1))
 	rad2Deg := dec.NewFromFloat(45.0).Div(tempReal)
 	lookbackTotal := 63
@@ -177,19 +191,19 @@ func HtTrendline(inReal []dec.Decimal) []dec.Decimal {
 	tempReal = inReal[today]
 	today++
 	periodWMASub = periodWMASub.Add(tempReal)
-	periodWMASum = periodWMASum.Add(tempReal.Mul(dec.NewFromFloat(2.0)))
+	periodWMASum = periodWMASum.Add(tempReal.Mul(_ints[2]))
 	tempReal = inReal[today]
 	today++
 	periodWMASub = periodWMASub.Add(tempReal)
-	periodWMASum = periodWMASum.Add(tempReal.Mul(dec.NewFromFloat(3.0)))
-	trailingWMAValue := dec.NewFromFloat(0.0)
+	periodWMASum = periodWMASum.Add(tempReal.Mul(_ints[3]))
+	trailingWMAValue := _ints[0]
 	i := 34
 	for ok := true; ok; {
 		tempReal = inReal[today]
 		today++
 		periodWMASub = periodWMASub.Add(tempReal)
 		periodWMASub = periodWMASub.Sub(trailingWMAValue)
-		periodWMASum = periodWMASum.Add(tempReal.Mul(dec.NewFromFloat(4.0)))
+		periodWMASum = periodWMASum.Add(tempReal.Mul(_ints[4]))
 		trailingWMAValue = inReal[trailingWMAIdx]
 		trailingWMAIdx++
 		//smoothedValue := periodWMASum * 0.1
@@ -198,45 +212,45 @@ func HtTrendline(inReal []dec.Decimal) []dec.Decimal {
 		ok = i != 0
 	}
 	hilbertIdx := 0
-	detrender := dec.NewFromFloat(0.0)
-	prevDetrenderOdd := dec.NewFromFloat(0.0)
-	prevDetrenderEven := dec.NewFromFloat(0.0)
-	prevDetrenderInputOdd := dec.NewFromFloat(0.0)
-	prevDetrenderInputEven := dec.NewFromFloat(0.0)
-	q1 := dec.NewFromFloat(0.0)
-	prevq1Odd := dec.NewFromFloat(0.0)
-	prevq1Even := dec.NewFromFloat(0.0)
-	prevq1InputOdd := dec.NewFromFloat(0.0)
-	prevq1InputEven := dec.NewFromFloat(0.0)
-	jI := dec.NewFromFloat(0.0)
-	prevJIOdd := dec.NewFromFloat(0.0)
-	prevJIEven := dec.NewFromFloat(0.0)
-	prevJIInputOdd := dec.NewFromFloat(0.0)
-	prevJIInputEven := dec.NewFromFloat(0.0)
-	jQ := dec.NewFromFloat(0.0)
-	prevJQOdd := dec.NewFromFloat(0.0)
-	prevJQEven := dec.NewFromFloat(0.0)
-	prevJQInputOdd := dec.NewFromFloat(0.0)
-	prevJQInputEven := dec.NewFromFloat(0.0)
-	period := dec.NewFromFloat(0.0)
+	detrender := _ints[0]
+	prevDetrenderOdd := _ints[0]
+	prevDetrenderEven := _ints[0]
+	prevDetrenderInputOdd := _ints[0]
+	prevDetrenderInputEven := _ints[0]
+	q1 := _ints[0]
+	prevq1Odd := _ints[0]
+	prevq1Even := _ints[0]
+	prevq1InputOdd := _ints[0]
+	prevq1InputEven := _ints[0]
+	jI := _ints[0]
+	prevJIOdd := _ints[0]
+	prevJIEven := _ints[0]
+	prevJIInputOdd := _ints[0]
+	prevJIInputEven := _ints[0]
+	jQ := _ints[0]
+	prevJQOdd := _ints[0]
+	prevJQEven := _ints[0]
+	prevJQInputOdd := _ints[0]
+	prevJQInputEven := _ints[0]
+	period := _ints[0]
 	outIdx := 63
-	previ2 := dec.NewFromFloat(0.0)
-	prevq2 := dec.NewFromFloat(0.0)
-	Re := dec.NewFromFloat(0.0)
-	Im := dec.NewFromFloat(0.0)
-	i1ForOddPrev3 := dec.NewFromFloat(0.0)
-	i1ForEvenPrev3 := dec.NewFromFloat(0.0)
-	i1ForOddPrev2 := dec.NewFromFloat(0.0)
-	i1ForEvenPrev2 := dec.NewFromFloat(0.0)
-	smoothPeriod := dec.NewFromFloat(0.0)
-	q2 := dec.NewFromFloat(0.0)
-	i2 := dec.NewFromFloat(0.0)
+	previ2 := _ints[0]
+	prevq2 := _ints[0]
+	Re := _ints[0]
+	Im := _ints[0]
+	i1ForOddPrev3 := _ints[0]
+	i1ForEvenPrev3 := _ints[0]
+	i1ForOddPrev2 := _ints[0]
+	i1ForEvenPrev2 := _ints[0]
+	smoothPeriod := _ints[0]
+	q2 := _ints[0]
+	i2 := _ints[0]
 	for today < len(inReal) {
 		adjustedPrevPeriod := (dec.NewFromFloat(0.075).Mul(period)).Add(dec.NewFromFloat(0.54))
 		todayValue := inReal[today]
 		periodWMASub = periodWMASub.Add(todayValue)
 		periodWMASub = periodWMASub.Sub(trailingWMAValue)
-		periodWMASum = periodWMASum.Add(todayValue.Mul(dec.NewFromFloat(4.0)))
+		periodWMASum = periodWMASum.Add(todayValue.Mul(_ints[4]))
 		trailingWMAValue = inReal[trailingWMAIdx]
 		trailingWMAIdx++
 		smoothedValue := periodWMASum.Mul(dec.NewFromFloat(0.1))
@@ -334,7 +348,7 @@ func HtTrendline(inReal []dec.Decimal) []dec.Decimal {
 		prevq2 = q2
 		previ2 = i2
 		tempReal = period
-		if (Im != dec.NewFromFloat(0.0)) && (Re != dec.NewFromFloat(0.0)) {
+		if !Im.Equal(_ints[0]) && !Re.Equal(_ints[0]) {
 			period = dec.NewFromFloat(360.0).Div(Im.Div(Re).Atan().Mul(rad2Deg))
 		}
 		tempReal2 := dec.NewFromFloat(1.5).Mul(tempReal)
@@ -345,8 +359,8 @@ func HtTrendline(inReal []dec.Decimal) []dec.Decimal {
 		if period.LessThan(tempReal2) {
 			period = tempReal2
 		}
-		if period.LessThan(dec.NewFromFloat(6.0)) {
-			period = dec.NewFromFloat(6.0)
+		if period.LessThan(_ints[6]) {
+			period = _ints[6]
 		} else if period.GreaterThan(dec.NewFromFloat(50.)) {
 			period = dec.NewFromFloat(50.0)
 		}
@@ -363,7 +377,7 @@ func HtTrendline(inReal []dec.Decimal) []dec.Decimal {
 		if DCPeriodInt > 0 {
 			tempReal = tempReal.Div(dec.NewFromFloat(float64(DCPeriodInt)))
 		}
-    tempReal2 = dec.NewFromFloat(4.0).Mul(tempReal).Add(dec.NewFromFloat(3.0).Mul(iTrend1)).Add(dec.NewFromFloat(2.0).Mul(iTrend2)).Add(iTrend3).Div(dec.NewFromFloat(10.0))
+    tempReal2 = _ints[4].Mul(tempReal).Add(_ints[3].Mul(iTrend1)).Add(_ints[2].Mul(iTrend2)).Add(iTrend3).Div(_ints[10])
 		iTrend3 = iTrend2
 		iTrend2 = iTrend1
 		iTrend1 = tempReal
@@ -386,52 +400,52 @@ func Kama(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
 	outReal := make([]dec.Decimal, len(inReal))
 
-	constMax := 2.0 / (30.0 + 1.0)
-	constDiff := 2.0/(2.0+1.0) - constMax
+	constMax := _ints[2].Div(dec.NewFromFloat(30.0).Add(_ints[1]))
+	constDiff := _ints[2].Div(_ints[2].Add(_ints[1])).Sub(constMax)
 	lookbackTotal := inTimePeriod
 	startIdx := lookbackTotal
-	sumROC1 := 0.0
+	sumROC1 := _ints[0]
 	today := startIdx - lookbackTotal
 	trailingIdx := today
 	i := inTimePeriod
 	for i > 0 {
 		tempReal := inReal[today]
 		today++
-		tempReal -= inReal[today]
-		sumROC1 += math.Abs(tempReal)
+		tempReal = tempReal.Sub(inReal[today])
+		sumROC1 = sumROC1.Add(tempReal.Abs())
 		i--
 	}
 	prevKAMA := inReal[today-1]
 	tempReal := inReal[today]
 	tempReal2 := inReal[trailingIdx]
 	trailingIdx++
-	periodROC := tempReal - tempReal2
+	periodROC := tempReal.Sub(tempReal2)
 	trailingValue := tempReal2
-	if (sumROC1 <= periodROC) || (((-(0.00000000000001)) < sumROC1) && (sumROC1 < (0.00000000000001))) {
-		tempReal = 1.0
+	if (sumROC1.LessThanOrEqual(periodROC)) || (dec.NewFromFloat(-0.00000000000001).LessThan(sumROC1) && sumROC1.LessThan(dec.NewFromFloat(0.00000000000001))) {
+		tempReal = _ints[1]
 	} else {
-		tempReal = math.Abs(periodROC / sumROC1)
+    tempReal = periodROC.Div(sumROC1).Abs()
 	}
-	tempReal = (tempReal * constDiff) + constMax
-	tempReal *= tempReal
-	prevKAMA = ((inReal[today] - prevKAMA) * tempReal) + prevKAMA
+	tempReal = tempReal.Mul(constDiff).Add(constMax)
+	tempReal = tempReal.Mul(tempReal)
+	prevKAMA = inReal[today].Sub(prevKAMA).Mul(tempReal).Add(prevKAMA)
 	today++
 	for today <= startIdx {
 		tempReal = inReal[today]
 		tempReal2 = inReal[trailingIdx]
 		trailingIdx++
-		periodROC = tempReal - tempReal2
-		sumROC1 -= math.Abs(trailingValue - tempReal2)
-		sumROC1 += math.Abs(tempReal - inReal[today-1])
+		periodROC = tempReal.Sub(tempReal2)
+		sumROC1 = sumROC1.Sub(trailingValue.Sub(tempReal2).Abs())
+		sumROC1 = sumROC1.Add(tempReal.Sub(inReal[today-1]).Abs())
 		trailingValue = tempReal2
-		if (sumROC1 <= periodROC) || (((-(0.00000000000001)) < sumROC1) && (sumROC1 < (0.00000000000001))) {
-			tempReal = 1.0
+		if sumROC1.LessThanOrEqual(periodROC) || (dec.NewFromFloat(-0.00000000000001).LessThan(sumROC1) && sumROC1.LessThan(dec.NewFromFloat(0.00000000000001))) {
+			tempReal = _ints[1]
 		} else {
-			tempReal = math.Abs(periodROC / sumROC1)
+			tempReal = periodROC.Div(sumROC1).Abs()
 		}
-		tempReal = (tempReal * constDiff) + constMax
-		tempReal *= tempReal
-		prevKAMA = ((inReal[today] - prevKAMA) * tempReal) + prevKAMA
+		tempReal = tempReal.Mul(constDiff).Add(constMax)
+		tempReal = tempReal.Mul(tempReal)
+		prevKAMA = inReal[today].Sub(prevKAMA).Mul(tempReal).Add(prevKAMA)
 		today++
 	}
 	outReal[inTimePeriod] = prevKAMA
@@ -440,18 +454,18 @@ func Kama(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 		tempReal = inReal[today]
 		tempReal2 = inReal[trailingIdx]
 		trailingIdx++
-		periodROC = tempReal - tempReal2
-		sumROC1 -= math.Abs(trailingValue - tempReal2)
-		sumROC1 += math.Abs(tempReal - inReal[today-1])
+		periodROC = tempReal.Sub(tempReal2)
+		sumROC1 = sumROC1.Sub(trailingValue.Sub(tempReal2).Abs())
+		sumROC1 = sumROC1.Add(tempReal.Sub(inReal[today-1]).Abs())
 		trailingValue = tempReal2
-		if (sumROC1 <= periodROC) || (((-(0.00000000000001)) < sumROC1) && (sumROC1 < (0.00000000000001))) {
-			tempReal = 1.0
+		if sumROC1.LessThanOrEqual(periodROC) || (dec.NewFromFloat(-0.00000000000001).LessThan(sumROC1) && sumROC1.LessThan(dec.NewFromFloat(0.00000000000001))) {
+			tempReal = _ints[1]
 		} else {
-			tempReal = math.Abs(periodROC / sumROC1)
+			tempReal = periodROC.Div(sumROC1).Abs()
 		}
-		tempReal = (tempReal * constDiff) + constMax
-		tempReal *= tempReal
-		prevKAMA = ((inReal[today] - prevKAMA) * tempReal) + prevKAMA
+		tempReal = tempReal.Mul(constDiff).Add(constMax)
+		tempReal = tempReal.Mul(tempReal)
+		prevKAMA = inReal[today].Sub(prevKAMA).Mul(tempReal).Add(prevKAMA)
 		today++
 		outReal[outIdx] = prevKAMA
 		outIdx++

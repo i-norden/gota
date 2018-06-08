@@ -10,13 +10,13 @@ but in some cases their precision is worth the trade off
 Install the package with:
 
 ```bash
-go get github.com/BlockchainAnalyticsLLC/gota.git
+go get github.com/i-norden/gota.git
 ```
 
 Import it with:
 
 ```go
-import "github.com/BlockchainAnalyticsLLC/gota.git"
+import "github.com/i-norden/gota.git"
 ```
 
 and use `talib` as the package name inside the code.
