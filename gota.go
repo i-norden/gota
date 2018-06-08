@@ -500,9 +500,9 @@ func Ma(inReal []dec.Decimal, inTimePeriod int, inMAType MaType) []dec.Decimal {
 	case KAMA:
 		outReal = Kama(inReal, inTimePeriod)
 	case MAMA:
-		outReal, _ = Mama(inReal, 0.5, 0.05)
+		outReal, _ = Mama(inReal, dec.NewFromFloat(0.5), dec.NewFromFloat(0.05))
 	case T3MA:
-		outReal = T3(inReal, inTimePeriod, 0.7)
+		outReal = T3(inReal, inTimePeriod, dec.NewFromFloat(0.7))
 	}
 	return outReal
 }
@@ -513,8 +513,8 @@ func Mama(inReal []dec.Decimal, inFastLimit dec.Decimal, inSlowLimit dec.Decimal
 	outMAMA := make([]dec.Decimal, len(inReal))
 	outFAMA := make([]dec.Decimal, len(inReal))
 
-	a := 0.0962
-	b := 0.5769
+	a := dec.NewFromFloat(0.0962)
+	b := dec.NewFromFloat(0.5769)
 	detrenderOdd := make([]dec.Decimal, 3)
 	detrenderEven := make([]dec.Decimal, 3)
 	q1Odd := make([]dec.Decimal, 3)
@@ -523,7 +523,7 @@ func Mama(inReal []dec.Decimal, inFastLimit dec.Decimal, inSlowLimit dec.Decimal
 	jIEven := make([]dec.Decimal, 3)
 	jQOdd := make([]dec.Decimal, 3)
 	jQEven := make([]dec.Decimal, 3)
-	rad2Deg := 180.0 / (4.0 * math.Atan(1))
+  rad2Deg := dec.NewFromFloat(180.0).Div(_ints[4].Mul(_ints[1].Atan()))
 	lookbackTotal := 32
 	startIdx := lookbackTotal
 	trailingWMAIdx := startIdx - lookbackTotal
@@ -534,250 +534,250 @@ func Mama(inReal []dec.Decimal, inFastLimit dec.Decimal, inSlowLimit dec.Decimal
 	periodWMASum := tempReal
 	tempReal = inReal[today]
 	today++
-	periodWMASub += tempReal
-	periodWMASum += tempReal * 2.0
+	periodWMASub = periodWMASub.Add(tempReal)
+	periodWMASum = periodWMASum.Add(tempReal.Mul(_ints[2]))
 	tempReal = inReal[today]
 	today++
-	periodWMASub += tempReal
-	periodWMASum += tempReal * 3.0
-	trailingWMAValue := 0.0
+	periodWMASub = periodWMASub.Add(tempReal)
+	periodWMASum = periodWMASum.Add(tempReal.Mul(_ints[3]))
+	trailingWMAValue := _ints[0]
 	i := 9
-	smoothedValue := 0.0
+	smoothedValue := _ints[0]
 	for ok := true; ok; {
 		tempReal = inReal[today]
 		today++
-		periodWMASub += tempReal
-		periodWMASub -= trailingWMAValue
-		periodWMASum += tempReal * 4.0
+		periodWMASub = periodWMASub.Add(tempReal)
+		periodWMASub = periodWMASub.Sub(trailingWMAValue)
+		periodWMASum = periodWMASum.Add(tempReal.Mul(_ints[4]))
 		trailingWMAValue = inReal[trailingWMAIdx]
 		trailingWMAIdx++
-		smoothedValue = periodWMASum * 0.1
-		periodWMASum -= periodWMASub
+		smoothedValue = periodWMASum.Mul(dec.NewFromFloat(0.1))
+		periodWMASum = periodWMASum.Sub(periodWMASub)
 		i--
 		ok = i != 0
 	}
 	hilbertIdx := 0
-	detrenderOdd[0] = 0.0
-	detrenderOdd[1] = 0.0
-	detrenderOdd[2] = 0.0
-	detrenderEven[0] = 0.0
-	detrenderEven[1] = 0.0
-	detrenderEven[2] = 0.0
-	detrender := 0.0
-	prevDetrenderOdd := 0.0
-	prevDetrenderEven := 0.0
-	prevDetrenderInputOdd := 0.0
-	prevDetrenderInputEven := 0.0
+	detrenderOdd[0] = _ints[0]
+	detrenderOdd[1] = _ints[0]
+	detrenderOdd[2] = _ints[0]
+	detrenderEven[0] = _ints[0]
+	detrenderEven[1] = _ints[0]
+	detrenderEven[2] = _ints[0]
+	detrender := _ints[0]
+	prevDetrenderOdd := _ints[0]
+	prevDetrenderEven := _ints[0]
+	prevDetrenderInputOdd := _ints[0]
+	prevDetrenderInputEven := _ints[0]
 
-	q1Odd[0] = 0.0
-	q1Odd[1] = 0.0
-	q1Odd[2] = 0.0
-	q1Even[0] = 0.0
-	q1Even[1] = 0.0
-	q1Even[2] = 0.0
-	q1 := 0.0
-	prevq1Odd := 0.0
-	prevq1Even := 0.0
-	prevq1InputOdd := 0.0
-	prevq1InputEven := 0.0
+	q1Odd[0] = _ints[0]
+	q1Odd[1] = _ints[0]
+	q1Odd[2] = _ints[0]
+	q1Even[0] = _ints[0]
+	q1Even[1] = _ints[0]
+	q1Even[2] = _ints[0]
+	q1 := _ints[0]
+	prevq1Odd := _ints[0]
+	prevq1Even := _ints[0]
+	prevq1InputOdd := _ints[0]
+	prevq1InputEven := _ints[0]
 
-	jIOdd[0] = 0.0
-	jIOdd[1] = 0.0
-	jIOdd[2] = 0.0
-	jIEven[0] = 0.0
-	jIEven[1] = 0.0
-	jIEven[2] = 0.0
-	jI := 0.0
-	prevjIOdd := 0.0
-	prevjIEven := 0.0
-	prevjIInputOdd := 0.0
-	prevjIInputEven := 0.0
+	jIOdd[0] = _ints[0]
+	jIOdd[1] = _ints[0]
+	jIOdd[2] = _ints[0]
+	jIEven[0] = _ints[0]
+	jIEven[1] = _ints[0]
+	jIEven[2] = _ints[0]
+	jI := _ints[0]
+	prevjIOdd := _ints[0]
+	prevjIEven := _ints[0]
+	prevjIInputOdd := _ints[0]
+	prevjIInputEven := _ints[0]
 
-	jQOdd[0] = 0.0
-	jQOdd[1] = 0.0
-	jQOdd[2] = 0.0
-	jQEven[0] = 0.0
-	jQEven[1] = 0.0
-	jQEven[2] = 0.0
-	jQ := 0.0
-	prevjQOdd := 0.0
-	prevjQEven := 0.0
-	prevjQInputOdd := 0.0
-	prevjQInputEven := 0.0
+	jQOdd[0] = _ints[0]
+	jQOdd[1] = _ints[0]
+	jQOdd[2] = _ints[0]
+	jQEven[0] = _ints[0]
+	jQEven[1] = _ints[0]
+	jQEven[2] = _ints[0]
+	jQ := _ints[0]
+	prevjQOdd := _ints[0]
+	prevjQEven := _ints[0]
+	prevjQInputOdd := _ints[0]
+	prevjQInputEven := _ints[0]
 
-	period := 0.0
+	period := _ints[0]
 	outIdx := startIdx
-	previ2, prevq2 := 0.0, 0.0
-	Re, Im := 0.0, 0.0
-	mama, fama := 0.0, 0.0
-	i1ForOddPrev3, i1ForEvenPrev3 := 0.0, 0.0
-	i1ForOddPrev2, i1ForEvenPrev2 := 0.0, 0.0
-	prevPhase := 0.0
-	adjustedPrevPeriod := 0.0
-	todayValue := 0.0
-	hilbertTempReal := 0.0
+	previ2, prevq2 := _ints[0], _ints[0]
+	Re, Im := _ints[0], _ints[0]
+	mama, fama := _ints[0], _ints[0]
+	i1ForOddPrev3, i1ForEvenPrev3 := _ints[0], _ints[0]
+	i1ForOddPrev2, i1ForEvenPrev2 := _ints[0], _ints[0]
+	prevPhase := _ints[0]
+	adjustedPrevPeriod := _ints[0]
+	todayValue := _ints[0]
+	hilbertTempReal := _ints[0]
 	for today < len(inReal) {
-		adjustedPrevPeriod = (0.075 * period) + 0.54
+		adjustedPrevPeriod = dec.NewFromFloat(0.075).Mul(period).Add(dec.NewFromFloat(0.54))
 		todayValue = inReal[today]
 
-		periodWMASub += todayValue
-		periodWMASub -= trailingWMAValue
-		periodWMASum += todayValue * 4.0
+		periodWMASub = periodWMASub.Add(todayValue)
+		periodWMASub = periodWMASub.Sub(trailingWMAValue)
+		periodWMASum = periodWMASum.Add(todayValue.Mul(_ints[4]))
 		trailingWMAValue = inReal[trailingWMAIdx]
 		trailingWMAIdx++
-		smoothedValue = periodWMASum * 0.1
-		periodWMASum -= periodWMASub
-		q2, i2 := 0.0, 0.0
-		tempReal2 := 0.0
+		smoothedValue = periodWMASum.Mul(dec.NewFromFloat(0.1))
+		periodWMASum = periodWMASum.Sub(periodWMASub)
+		q2, i2 := _ints[0], _ints[0]
+		tempReal2 := _ints[0]
 		if (today % 2) == 0 {
 
-			hilbertTempReal = a * smoothedValue
-			detrender = -detrenderEven[hilbertIdx]
+			hilbertTempReal = a.Mul(smoothedValue)
+			detrender = detrenderEven[hilbertIdx].Sub()
 			detrenderEven[hilbertIdx] = hilbertTempReal
-			detrender += hilbertTempReal
-			detrender -= prevDetrenderEven
-			prevDetrenderEven = b * prevDetrenderInputEven
-			detrender += prevDetrenderEven
+			detrender = detrender.Add(hilbertTempReal)
+			detrender = detrender.Sub(prevDetrenderEven)
+			prevDetrenderEven = b.Mul(prevDetrenderInputEven)
+			detrender = detrender.Add(prevDetrenderEven)
 			prevDetrenderInputEven = smoothedValue
-			detrender *= adjustedPrevPeriod
+			detrender = detrender.Mul(adjustedPrevPeriod)
 
-			hilbertTempReal = a * detrender
-			q1 = -q1Even[hilbertIdx]
+			hilbertTempReal = a.Mul(detrender)
+			q1 = q1Even[hilbertIdx].Neg()
 			q1Even[hilbertIdx] = hilbertTempReal
-			q1 += hilbertTempReal
-			q1 -= prevq1Even
-			prevq1Even = b * prevq1InputEven
-			q1 += prevq1Even
+			q1 = q1.Add(hilbertTempReal)
+			q1 = q1.Sub(prevq1Even)
+			prevq1Even = b.Mul(prevq1InputEven)
+			q1 = q1.Add(prevq1Even)
 			prevq1InputEven = detrender
-			q1 *= adjustedPrevPeriod
+			q1 = q1.Mul(adjustedPrevPeriod)
 
-			hilbertTempReal = a * i1ForEvenPrev3
-			jI = -jIEven[hilbertIdx]
+			hilbertTempReal = a.Mul(i1ForEvenPrev3)
+			jI = jIEven[hilbertIdx].Neg()
 			jIEven[hilbertIdx] = hilbertTempReal
-			jI += hilbertTempReal
-			jI -= prevjIEven
-			prevjIEven = b * prevjIInputEven
-			jI += prevjIEven
+			jI = jI.Add(hilbertTempReal)
+			jI = jI.Sub(prevjIEven)
+			prevjIEven = b.Mul(prevjIInputEven)
+			jI = jI.Add(prevjIEven)
 			prevjIInputEven = i1ForEvenPrev3
-			jI *= adjustedPrevPeriod
+			jI = jI.Mul(adjustedPrevPeriod)
 
-			hilbertTempReal = a * q1
-			jQ = -jQEven[hilbertIdx]
+			hilbertTempReal = a.Mul(q1)
+			jQ = jQEven[hilbertIdx].Neg()
 			jQEven[hilbertIdx] = hilbertTempReal
-			jQ += hilbertTempReal
-			jQ -= prevjQEven
-			prevjQEven = b * prevjQInputEven
-			jQ += prevjQEven
+			jQ = jQ.Add(hilbertTempReal)
+			jQ = jQ.Sub(prevjQEven)
+			prevjQEven = b.Mul(prevjQInputEven)
+			jQ = jQ.Add(prevjQEven)
 			prevjQInputEven = q1
-			jQ *= adjustedPrevPeriod
+			jQ = jQ.Mul(adjustedPrevPeriod)
 			hilbertIdx++
 			if hilbertIdx == 3 {
 				hilbertIdx = 0
 			}
-			q2 = (0.2 * (q1 + jI)) + (0.8 * prevq2)
-			i2 = (0.2 * (i1ForEvenPrev3 - jQ)) + (0.8 * previ2)
+      q2 = dec.NewFromFloat(0.2).Mul(q1.Add(jI)).Add(dec.NewFromFloat(0.8).Mul(prevq2))
+      i2 = dec.NewFromFloat(0.2).Mul(i1ForEvenPrev3.Sub(jQ)).Add(dec.NewFromFloat(0.8).Mul(previ2))
 			i1ForOddPrev3 = i1ForOddPrev2
 			i1ForOddPrev2 = detrender
-			if i1ForEvenPrev3 != 0.0 {
-				tempReal2 = (math.Atan(q1/i1ForEvenPrev3) * rad2Deg)
+			if !i1ForEvenPrev3.Equal(_ints[0]) {
+        tempReal2 = q1.Div(i1ForEvenPrev3).Atan().Mul(rad2Deg)
 			} else {
-				tempReal2 = 0.0
+				tempReal2 = _ints[0]
 			}
 		} else {
 
-			hilbertTempReal = a * smoothedValue
-			detrender = -detrenderOdd[hilbertIdx]
+			hilbertTempReal = a.Mul(smoothedValue)
+			detrender = detrenderOdd[hilbertIdx].Neg()
 			detrenderOdd[hilbertIdx] = hilbertTempReal
-			detrender += hilbertTempReal
-			detrender -= prevDetrenderOdd
-			prevDetrenderOdd = b * prevDetrenderInputOdd
-			detrender += prevDetrenderOdd
+			detrender = detrender.Add(hilbertTempReal)
+			detrender = detrender.Sub(prevDetrenderOdd)
+			prevDetrenderOdd = b.Mul(prevDetrenderInputOdd)
+			detrender = detrender.Add(prevDetrenderOdd)
 			prevDetrenderInputOdd = smoothedValue
-			detrender *= adjustedPrevPeriod
+			detrender = detrender.Mul(adjustedPrevPeriod)
 
-			hilbertTempReal = a * detrender
-			q1 = -q1Odd[hilbertIdx]
+			hilbertTempReal = a.Mul(detrender)
+			q1 = q1Odd[hilbertIdx].Neg()
 			q1Odd[hilbertIdx] = hilbertTempReal
-			q1 += hilbertTempReal
-			q1 -= prevq1Odd
-			prevq1Odd = b * prevq1InputOdd
-			q1 += prevq1Odd
+			q1 = q1.Add(hilbertTempReal)
+			q1 = q1.Sub(prevq1Odd)
+			prevq1Odd = b.Mul(prevq1InputOdd)
+			q1 = q1.Add(prevq1Odd)
 			prevq1InputOdd = detrender
-			q1 *= adjustedPrevPeriod
+			q1 = q1.Mul(adjustedPrevPeriod)
 
-			hilbertTempReal = a * i1ForOddPrev3
-			jI = -jIOdd[hilbertIdx]
+			hilbertTempReal = a.Mul(i1ForOddPrev3)
+			jI = jIOdd[hilbertIdx].Neg()
 			jIOdd[hilbertIdx] = hilbertTempReal
-			jI += hilbertTempReal
-			jI -= prevjIOdd
-			prevjIOdd = b * prevjIInputOdd
-			jI += prevjIOdd
+			jI = jI.Add(hilbertTempReal)
+			jI = jI.Sub(prevjIOdd)
+			prevjIOdd = b.Mul(prevjIInputOdd)
+			jI = jI.Add(prevjIOdd)
 			prevjIInputOdd = i1ForOddPrev3
-			jI *= adjustedPrevPeriod
+			jI = jI.Mul(adjustedPrevPeriod)
 
-			hilbertTempReal = a * q1
-			jQ = -jQOdd[hilbertIdx]
+			hilbertTempReal = a.Mul(q1)
+			jQ = jQOdd[hilbertIdx].Neg()
 			jQOdd[hilbertIdx] = hilbertTempReal
-			jQ += hilbertTempReal
-			jQ -= prevjQOdd
-			prevjQOdd = b * prevjQInputOdd
-			jQ += prevjQOdd
+			jQ = jQ.Add(hilbertTempReal)
+			jQ = jQ.Sub(prevjQOdd)
+			prevjQOdd = b.Mul(prevjQInputOdd)
+			jQ = jQ.Add(prevjQOdd)
 			prevjQInputOdd = q1
-			jQ *= adjustedPrevPeriod
+			jQ = jQ.Mul(adjustedPrevPeriod)
 
-			q2 = (0.2 * (q1 + jI)) + (0.8 * prevq2)
-			i2 = (0.2 * (i1ForOddPrev3 - jQ)) + (0.8 * previ2)
+      q2 = dec.NewFromFloat(0.2).Mul(q1.Add(jI)).Add(dec.NewFromFloat(0.8).Mul(prevq2))
+      i2 = dec.NewFromFloat(0.2).Mul(i1ForOddPrev3.Sub(jQ)).Add(dec.NewFromFloat(0.8).Mul(previ2))
 			i1ForEvenPrev3 = i1ForEvenPrev2
 			i1ForEvenPrev2 = detrender
-			if i1ForOddPrev3 != 0.0 {
-				tempReal2 = (math.Atan(q1/i1ForOddPrev3) * rad2Deg)
+			if !i1ForOddPrev3.Equal(_ints[0]) {
+        tempReal2 = q1.Div(i1ForOddPrev3).Atan().Mul(rad2Deg)
 			} else {
-				tempReal2 = 0.0
+				tempReal2 = _ints[0]
 			}
 		}
-		tempReal = prevPhase - tempReal2
+		tempReal = prevPhase.Sub(tempReal2)
 		prevPhase = tempReal2
-		if tempReal < 1.0 {
-			tempReal = 1.0
+		if tempReal.LessThan(_ints[1]) {
+			tempReal = _ints[1]
 		}
-		if tempReal > 1.0 {
-			tempReal = inFastLimit / tempReal
-			if tempReal < inSlowLimit {
+		if tempReal.GreaterThan(_ints[1]) {
+			tempReal = inFastLimit.Div(tempReal)
+			if tempReal.LessThan(inSlowLimit) {
 				tempReal = inSlowLimit
 			}
 		} else {
 			tempReal = inFastLimit
 		}
-		mama = (tempReal * todayValue) + ((1 - tempReal) * mama)
-		tempReal *= 0.5
-		fama = (tempReal * mama) + ((1 - tempReal) * fama)
+		mama = tempReal.Mul(todayValue).Add(_ints[1].Sub(tempReal).Mul(mama))
+		tempReal = tempReal.Mul(dec.NewFromFloat(0.5))
+		fama = tempReal.Mul(mama).Add(_ints[1].Sub(tempReal).Mul(fama))
 		if today >= startIdx {
 			outMAMA[outIdx] = mama
 			outFAMA[outIdx] = fama
 			outIdx++
 		}
-		Re = (0.2 * ((i2 * previ2) + (q2 * prevq2))) + (0.8 * Re)
-		Im = (0.2 * ((i2 * prevq2) - (q2 * previ2))) + (0.8 * Im)
+    Re = dec.NewFromFloat(0.2).Mul(i2.Mul(previ2)).Add(q2.Mul(prevq2)).Add(dec.NewFromFloat(0.8).Mul(Re))
+    Im = dec.NewFromFloat(0.2).Mul(i2.Mul(prevq2)).Sub(q2.Mul(previ2)).Add(dec.NewFromFloat(0.8).Mul(Im))
 		prevq2 = q2
 		previ2 = i2
 		tempReal = period
-		if (Im != 0.0) && (Re != 0.0) {
-			period = 360.0 / (math.Atan(Im/Re) * rad2Deg)
+		if !Im.Equal(_ints[0]) && !Re.Equal(_ints[0]) {
+      period = dec.NewFromFloat(360.0).Div(Im.Div(Re).Atan().Mul(rad2Deg))
 		}
-		tempReal2 = 1.5 * tempReal
-		if period > tempReal2 {
+		tempReal2 = dec.NewFromFloat(1.5).Mul(tempReal)
+		if period.GreaterThan(tempReal2) {
 			period = tempReal2
 		}
-		tempReal2 = 0.67 * tempReal
-		if period < tempReal2 {
+		tempReal2 = dec.NewFromFloat(0.67).Mul(tempReal)
+		if period.LessThan(tempReal2) {
 			period = tempReal2
 		}
-		if period < 6 {
-			period = 6
-		} else if period > 50 {
-			period = 50
+		if period.LessThan(_ints[6]) {
+			period = _ints[6]
+		} else if period.GreaterThan(dec.NewFromFloat(50.0)) {
+			period = dec.NewFromFloat(50.0)
 		}
-		period = (0.2 * period) + (0.8 * tempReal)
+    period = dec.NewFromFloat(0.2).Mul(period).Add(dec.NewFromFloat(0.8).Mul(tempReal))
 		today++
 	}
 	return outMAMA, outFAMA
