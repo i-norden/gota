@@ -1,8 +1,8 @@
-# go-talib
+# gota
 
 Version of [go-talib](https://github.com/markcheno/go-talib) that uses [decimals](https://github.com/shopspring/decimal) instead of floats
 
-Decimals will be slightly less performant than float64s (or big.Rats, or big.Floats),
+Decimals will be slightly less performant than floats,
 but in some cases their precision is worth the trade off
 
 ## Install

@@ -8,14 +8,14 @@ Licensed under terms of MIT license (see LICENSE)
 package gota
 
 import "math"
-import "github.com/i-norden/decimal" // currently need my fork for the added trig functions
+import dec "github.com/i-norden/decimal" // currently need my fork for the added trig functions
 
 // MaType - Moving average type
 type MaType int
 
 type moneyFlow struct {
-	positive decimal.Decimal
-	negative decimal.Decimal
+	positive dec.Decimal
+	negative dec.Decimal
 }
 
 // Kinds of moving averages
@@ -35,17 +35,17 @@ const (
 
 // BBands - Bollinger Bands
 // upperband, middleband, lowerband = BBands(close, timeperiod=5, nbdevup=2, nbdevdn=2, matype=0)
-func BBands(inReal []decimal.Decimal, inTimePeriod int, inNbDevUp decimal.Decimal, inNbDevDn decimal.Decimal, inMAType MaType) ([]decimal.Decimal, []decimal.Decimal, []decimal.Decimal) {
+func BBands(inReal []dec.Decimal, inTimePeriod int, inNbDevUp dec.Decimal, inNbDevDn dec.Decimal, inMAType MaType) ([]dec.Decimal, []dec.Decimal, []dec.Decimal) {
 
-	outRealUpperBand := make([]decimal.Decimal, len(inReal))
+	outRealUpperBand := make([]dec.Decimal, len(inReal))
 	outRealMiddleBand := Ma(inReal, inTimePeriod, inMAType)
-	outRealLowerBand := make([]decimal.Decimal, len(inReal))
+	outRealLowerBand := make([]dec.Decimal, len(inReal))
 
-	tempBuffer2 := StdDev(inReal, inTimePeriod, decimal.NewFromFloat(1.0))
+	tempBuffer2 := StdDev(inReal, inTimePeriod, dec.NewFromFloat(1.0))
 
 	if inNbDevUp == inNbDevDn {
 
-		if inNbDevUp == decimal.NewFromFloat(1.0) {
+		if inNbDevUp == dec.NewFromFloat(1.0) {
 			for i := 0; i < len(inReal); i++ {
 				tempReal := tempBuffer2[i]
 				tempReal2 := outRealMiddleBand[i]
@@ -60,14 +60,14 @@ func BBands(inReal []decimal.Decimal, inTimePeriod int, inNbDevUp decimal.Decima
 				outRealLowerBand[i] = tempReal2.Sub(tempReal)
 			}
 		}
-	} else if inNbDevUp == decimal.NewFromFloat(1.0) {
+	} else if inNbDevUp == dec.NewFromFloat(1.0) {
 		for i := 0; i < len(inReal); i++ {
 			tempReal := tempBuffer2[i]
 			tempReal2 := outRealMiddleBand[i]
 			outRealUpperBand[i] = tempReal2.Add(tempReal)
 			outRealLowerBand[i] = tempReal2.Sub(tempReal.Mul(inNbDevDn))
 		}
-	} else if inNbDevDn == decimal.NewFromFloat(1.0) {
+	} else if inNbDevDn == dec.NewFromFloat(1.0) {
 		for i := 0; i < len(inReal); i++ {
 			tempReal := tempBuffer2[i]
 			tempReal2 := outRealMiddleBand[i]
@@ -86,38 +86,38 @@ func BBands(inReal []decimal.Decimal, inTimePeriod int, inNbDevUp decimal.Decima
 }
 
 // Dema - Double Exponential Moving Average
-func Dema(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Dema(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	firstEMA := Ema(inReal, inTimePeriod)
 	secondEMA := Ema(firstEMA[inTimePeriod-1:], inTimePeriod)
 
 	for outIdx, secondEMAIdx := (inTimePeriod*2)-2, inTimePeriod-1; outIdx < len(inReal); outIdx, secondEMAIdx = outIdx+1, secondEMAIdx+1 {
-		outReal[outIdx] = (decimal.NewFromFloat(2.0).Mul(firstEMA[outIdx])).Sub(secondEMA[secondEMAIdx])
+		outReal[outIdx] = (dec.NewFromFloat(2.0).Mul(firstEMA[outIdx])).Sub(secondEMA[secondEMAIdx])
 	}
 
 	return outReal
 }
 
 // Ema - Exponential Moving Average
-func ema(inReal []decimal.Decimal, inTimePeriod int, k1 decimal.Decimal) []decimal.Decimal {
+func ema(inReal []dec.Decimal, inTimePeriod int, k1 dec.Decimal) []dec.Decimal {
 
-  decimal.DivisionPrecision = 8
+  dec.DivisionPrecision = 8
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	lookbackTotal := inTimePeriod - 1
 	startIdx := lookbackTotal
 	today := startIdx - lookbackTotal
 	i := inTimePeriod
-	tempReal := decimal.NewFromFloat(0.0)
+	tempReal := dec.NewFromFloat(0.0)
 	for i > 0 {
 		tempReal = tempReal.Add(inReal[today])
 		today++
 		i--
 	}
 
-	prevMA := tempReal.Div(decimal.NewFromFloat(float64(inTimePeriod)))
+	prevMA := tempReal.Div(dec.NewFromFloat(float64(inTimePeriod)))
 
 	for today <= startIdx {
 		prevMA = ((inReal[today].Sub(prevMA)).Mul(k1)).Add(prevMA)
@@ -136,36 +136,36 @@ func ema(inReal []decimal.Decimal, inTimePeriod int, k1 decimal.Decimal) []decim
 }
 
 // Ema - Exponential Moving Average
-func Ema(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Ema(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-  decimal.DivisionPrecision = 8
-	k := decimal.NewFromFloat(2.0).Div(decimal.NewFromFloat(float64(inTimePeriod+1)))
+  dec.DivisionPrecision = 8
+	k := dec.NewFromFloat(2.0).Div(dec.NewFromFloat(float64(inTimePeriod+1)))
 	outReal := ema(inReal, inTimePeriod, k)
 	return outReal
 }
 
 // HtTrendline - Hilbert Transform - Instantaneous Trendline (lookback=63)
-func HtTrendline(inReal []decimal.Decimal) []decimal.Decimal {
+func HtTrendline(inReal []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
-	a := decimal.NewFromFloat(0.0962)
-	b := decimal.NewFromFloat(0.5769)
-	detrenderOdd := make([]decimal.Decimal, 3)
-	detrenderEven := make([]decimal.Decimal, 3)
-	q1Odd := make([]decimal.Decimal, 3)
-	q1Even := make([]decimal.Decimal, 3)
-	jIOdd := make([]decimal.Decimal, 3)
-	jIEven := make([]decimal.Decimal, 3)
-	jQOdd := make([]decimal.Decimal, 3)
-	jQEven := make([]decimal.Decimal, 3)
+	outReal := make([]dec.Decimal, len(inReal))
+	a := dec.NewFromFloat(0.0962)
+	b := dec.NewFromFloat(0.5769)
+	detrenderOdd := make([]dec.Decimal, 3)
+	detrenderEven := make([]dec.Decimal, 3)
+	q1Odd := make([]dec.Decimal, 3)
+	q1Even := make([]dec.Decimal, 3)
+	jIOdd := make([]dec.Decimal, 3)
+	jIEven := make([]dec.Decimal, 3)
+	jQOdd := make([]dec.Decimal, 3)
+	jQEven := make([]dec.Decimal, 3)
 	smoothPriceIdx := 0
 	maxIdxSmoothPrice := (50 - 1)
-	smoothPrice := make([]decimal.Decimal, maxIdxSmoothPrice+1)
-	iTrend1 := decimal.NewFromFloat(0.0)
-	iTrend2 := decimal.NewFromFloat(0.0)
-	iTrend3 := decimal.NewFromFloat(0.0)
-	tempReal := decimal.NewFromFloat(math.Atan(1))
-	rad2Deg := decimal.NewFromFloat(45.0).Div(tempReal)
+	smoothPrice := make([]dec.Decimal, maxIdxSmoothPrice+1)
+	iTrend1 := dec.NewFromFloat(0.0)
+	iTrend2 := dec.NewFromFloat(0.0)
+	iTrend3 := dec.NewFromFloat(0.0)
+	tempReal := dec.NewFromFloat(math.Atan(1))
+	rad2Deg := dec.NewFromFloat(45.0).Div(tempReal)
 	lookbackTotal := 63
 	startIdx := lookbackTotal
 	trailingWMAIdx := startIdx - lookbackTotal
@@ -177,19 +177,19 @@ func HtTrendline(inReal []decimal.Decimal) []decimal.Decimal {
 	tempReal = inReal[today]
 	today++
 	periodWMASub = periodWMASub.Add(tempReal)
-	periodWMASum = periodWMASum.Add(tempReal.Mul(decimal.NewFromFloat(2.0)))
+	periodWMASum = periodWMASum.Add(tempReal.Mul(dec.NewFromFloat(2.0)))
 	tempReal = inReal[today]
 	today++
 	periodWMASub = periodWMASub.Add(tempReal)
-	periodWMASum = periodWMASum.Add(tempReal.Mul(decimal.NewFromFloat(3.0)))
-	trailingWMAValue := decimal.NewFromFloat(0.0)
+	periodWMASum = periodWMASum.Add(tempReal.Mul(dec.NewFromFloat(3.0)))
+	trailingWMAValue := dec.NewFromFloat(0.0)
 	i := 34
 	for ok := true; ok; {
 		tempReal = inReal[today]
 		today++
 		periodWMASub = periodWMASub.Add(tempReal)
 		periodWMASub = periodWMASub.Sub(trailingWMAValue)
-		periodWMASum = periodWMASum.Add(tempReal.Mul(decimal.NewFromFloat(4.0)))
+		periodWMASum = periodWMASum.Add(tempReal.Mul(dec.NewFromFloat(4.0)))
 		trailingWMAValue = inReal[trailingWMAIdx]
 		trailingWMAIdx++
 		//smoothedValue := periodWMASum * 0.1
@@ -198,48 +198,48 @@ func HtTrendline(inReal []decimal.Decimal) []decimal.Decimal {
 		ok = i != 0
 	}
 	hilbertIdx := 0
-	detrender := decimal.NewFromFloat(0.0)
-	prevDetrenderOdd := decimal.NewFromFloat(0.0)
-	prevDetrenderEven := decimal.NewFromFloat(0.0)
-	prevDetrenderInputOdd := decimal.NewFromFloat(0.0)
-	prevDetrenderInputEven := decimal.NewFromFloat(0.0)
-	q1 := decimal.NewFromFloat(0.0)
-	prevq1Odd := decimal.NewFromFloat(0.0)
-	prevq1Even := decimal.NewFromFloat(0.0)
-	prevq1InputOdd := decimal.NewFromFloat(0.0)
-	prevq1InputEven := decimal.NewFromFloat(0.0)
-	jI := decimal.NewFromFloat(0.0)
-	prevJIOdd := decimal.NewFromFloat(0.0)
-	prevJIEven := decimal.NewFromFloat(0.0)
-	prevJIInputOdd := decimal.NewFromFloat(0.0)
-	prevJIInputEven := decimal.NewFromFloat(0.0)
-	jQ := decimal.NewFromFloat(0.0)
-	prevJQOdd := decimal.NewFromFloat(0.0)
-	prevJQEven := decimal.NewFromFloat(0.0)
-	prevJQInputOdd := decimal.NewFromFloat(0.0)
-	prevJQInputEven := decimal.NewFromFloat(0.0)
-	period := decimal.NewFromFloat(0.0)
+	detrender := dec.NewFromFloat(0.0)
+	prevDetrenderOdd := dec.NewFromFloat(0.0)
+	prevDetrenderEven := dec.NewFromFloat(0.0)
+	prevDetrenderInputOdd := dec.NewFromFloat(0.0)
+	prevDetrenderInputEven := dec.NewFromFloat(0.0)
+	q1 := dec.NewFromFloat(0.0)
+	prevq1Odd := dec.NewFromFloat(0.0)
+	prevq1Even := dec.NewFromFloat(0.0)
+	prevq1InputOdd := dec.NewFromFloat(0.0)
+	prevq1InputEven := dec.NewFromFloat(0.0)
+	jI := dec.NewFromFloat(0.0)
+	prevJIOdd := dec.NewFromFloat(0.0)
+	prevJIEven := dec.NewFromFloat(0.0)
+	prevJIInputOdd := dec.NewFromFloat(0.0)
+	prevJIInputEven := dec.NewFromFloat(0.0)
+	jQ := dec.NewFromFloat(0.0)
+	prevJQOdd := dec.NewFromFloat(0.0)
+	prevJQEven := dec.NewFromFloat(0.0)
+	prevJQInputOdd := dec.NewFromFloat(0.0)
+	prevJQInputEven := dec.NewFromFloat(0.0)
+	period := dec.NewFromFloat(0.0)
 	outIdx := 63
-	previ2 := decimal.NewFromFloat(0.0)
-	prevq2 := decimal.NewFromFloat(0.0)
-	Re := decimal.NewFromFloat(0.0)
-	Im := decimal.NewFromFloat(0.0)
-	i1ForOddPrev3 := decimal.NewFromFloat(0.0)
-	i1ForEvenPrev3 := decimal.NewFromFloat(0.0)
-	i1ForOddPrev2 := decimal.NewFromFloat(0.0)
-	i1ForEvenPrev2 := decimal.NewFromFloat(0.0)
-	smoothPeriod := decimal.NewFromFloat(0.0)
-	q2 := decimal.NewFromFloat(0.0)
-	i2 := decimal.NewFromFloat(0.0)
+	previ2 := dec.NewFromFloat(0.0)
+	prevq2 := dec.NewFromFloat(0.0)
+	Re := dec.NewFromFloat(0.0)
+	Im := dec.NewFromFloat(0.0)
+	i1ForOddPrev3 := dec.NewFromFloat(0.0)
+	i1ForEvenPrev3 := dec.NewFromFloat(0.0)
+	i1ForOddPrev2 := dec.NewFromFloat(0.0)
+	i1ForEvenPrev2 := dec.NewFromFloat(0.0)
+	smoothPeriod := dec.NewFromFloat(0.0)
+	q2 := dec.NewFromFloat(0.0)
+	i2 := dec.NewFromFloat(0.0)
 	for today < len(inReal) {
-		adjustedPrevPeriod := (decimal.NewFromFloat(0.075).Mul(period)).Add(decimal.NewFromFloat(0.54))
+		adjustedPrevPeriod := (dec.NewFromFloat(0.075).Mul(period)).Add(dec.NewFromFloat(0.54))
 		todayValue := inReal[today]
 		periodWMASub = periodWMASub.Add(todayValue)
 		periodWMASub = periodWMASub.Sub(trailingWMAValue)
-		periodWMASum = periodWMASum.Add(todayValue.Mul(decimal.NewFromFloat(4.0)))
+		periodWMASum = periodWMASum.Add(todayValue.Mul(dec.NewFromFloat(4.0)))
 		trailingWMAValue = inReal[trailingWMAIdx]
 		trailingWMAIdx++
-		smoothedValue := periodWMASum.Mul(decimal.NewFromFloat(0.1))
+		smoothedValue := periodWMASum.Mul(dec.NewFromFloat(0.1))
 		periodWMASum = periodWMASum.Sub(periodWMASub)
 		smoothPrice[smoothPriceIdx] = smoothedValue
 		if (today % 2) == 0 {
@@ -283,8 +283,8 @@ func HtTrendline(inReal []decimal.Decimal) []decimal.Decimal {
 			if hilbertIdx == 3 {
 				hilbertIdx = 0
 			}
-			q2 = (decimal.NewFromFloat(0.2).Mul(q1.Add(jI))).Add(decimal.NewFromFloat(0.8).Mul(prevq2))
-			i2 = (decimal.NewFromFloat(0.2).Mul(i1ForEvenPrev3.Sub(jQ))).Add(decimal.NewFromFloat(0.8).Mul(previ2))
+			q2 = (dec.NewFromFloat(0.2).Mul(q1.Add(jI))).Add(dec.NewFromFloat(0.8).Mul(prevq2))
+			i2 = (dec.NewFromFloat(0.2).Mul(i1ForEvenPrev3.Sub(jQ))).Add(dec.NewFromFloat(0.8).Mul(previ2))
 			i1ForOddPrev3 = i1ForOddPrev2
 			i1ForOddPrev2 = detrender
 		} else {
@@ -324,46 +324,46 @@ func HtTrendline(inReal []decimal.Decimal) []decimal.Decimal {
 			jQ = jQ.Add(prevJQOdd)
 			prevJQInputOdd = q1
 			jQ = jQ.Mul(adjustedPrevPeriod)
-			q2 = (decimal.NewFromFloat(0.2).Mul(q1.Add(jI))).Add(decimal.NewFromFloat(0.8).Mul(prevq2))
-			i2 = (decimal.NewFromFloat(0.2).Mul(i1ForOddPrev3.Sub(jQ))).Add(decimal.NewFromFloat(0.8).Mul(previ2))
+			q2 = (dec.NewFromFloat(0.2).Mul(q1.Add(jI))).Add(dec.NewFromFloat(0.8).Mul(prevq2))
+			i2 = (dec.NewFromFloat(0.2).Mul(i1ForOddPrev3.Sub(jQ))).Add(dec.NewFromFloat(0.8).Mul(previ2))
 			i1ForEvenPrev3 = i1ForEvenPrev2
 			i1ForEvenPrev2 = detrender
 		}
-		Re = (decimal.NewFromFloat(0.2).Mul((i2.Mul(previ2)).Add(q2.Mul(prevq2)))).Add(decimal.NewFromFloat(0.8).Mul(Re))
-		Im = (decimal.NewFromFloat(0.2).Mul((i2.Mul(prevq2)).Sub(q2.Mul(previ2)))).Add(decimal.NewFromFloat(0.8).Mul(Im))
+		Re = (dec.NewFromFloat(0.2).Mul((i2.Mul(previ2)).Add(q2.Mul(prevq2)))).Add(dec.NewFromFloat(0.8).Mul(Re))
+		Im = (dec.NewFromFloat(0.2).Mul((i2.Mul(prevq2)).Sub(q2.Mul(previ2)))).Add(dec.NewFromFloat(0.8).Mul(Im))
 		prevq2 = q2
 		previ2 = i2
 		tempReal = period
-		if (Im != decimal.NewFromFloat(0.0)) && (Re != decimal.NewFromFloat(0.0)) {
-			period = decimal.NewFromFloat(360.0).Div(Im.Div(Re).Atan().Mul(rad2Deg))
+		if (Im != dec.NewFromFloat(0.0)) && (Re != dec.NewFromFloat(0.0)) {
+			period = dec.NewFromFloat(360.0).Div(Im.Div(Re).Atan().Mul(rad2Deg))
 		}
-		tempReal2 := NewFromFloat(1.5).Mul(tempReal)
-		if period > tempReal2 {
+		tempReal2 := dec.NewFromFloat(1.5).Mul(tempReal)
+		if period.GreaterThan(tempReal2) {
 			period = tempReal2
 		}
-		tempReal2 = 0.67 * tempReal
-		if period < tempReal2 {
+		tempReal2 = dec.NewFromFloat(0.67).Mul(tempReal)
+		if period.LessThan(tempReal2) {
 			period = tempReal2
 		}
-		if period < 6 {
-			period = 6
-		} else if period > 50 {
-			period = 50
+		if period.LessThan(dec.NewFromFloat(6.0)) {
+			period = dec.NewFromFloat(6.0)
+		} else if period.GreaterThan(dec.NewFromFloat(50.)) {
+			period = dec.NewFromFloat(50.0)
 		}
-		period = (0.2 * period) + (0.8 * tempReal)
-		smoothPeriod = (0.33 * period) + (0.67 * smoothPeriod)
-		DCPeriod := smoothPeriod + 0.5
-		DCPeriodInt := math.Floor(DCPeriod)
+    period = dec.NewFromFloat(0.2).Mul(period).Add(dec.NewFromFloat(0.8).Mul(tempReal))
+    smoothPeriod = dec.NewFromFloat(0.33).Mul(period).Add(dec.NewFromFloat(0.67).Mul(smoothPeriod))
+		DCPeriod := smoothPeriod.Add(dec.NewFromFloat(0.5))
+		DCPeriodInt := DCPeriod.IntPart()
 		idx := today
-		tempReal = 0.0
+		tempReal = dec.NewFromFloat(0.0)
 		for i := 0; i < int(DCPeriodInt); i++ {
-			tempReal += inReal[idx]
+			tempReal = tempReal.Add(inReal[idx])
 			idx--
 		}
 		if DCPeriodInt > 0 {
-			tempReal = tempReal / (DCPeriodInt * 1.0)
+			tempReal = tempReal.Div(dec.NewFromFloat(float64(DCPeriodInt)))
 		}
-		tempReal2 = (4.0*tempReal + 3.0*iTrend1 + 2.0*iTrend2 + iTrend3) / 10.0
+    tempReal2 = dec.NewFromFloat(4.0).Mul(tempReal).Add(dec.NewFromFloat(3.0).Mul(iTrend1)).Add(dec.NewFromFloat(2.0).Mul(iTrend2)).Add(iTrend3).Div(dec.NewFromFloat(10.0))
 		iTrend3 = iTrend2
 		iTrend2 = iTrend1
 		iTrend1 = tempReal
@@ -382,9 +382,9 @@ func HtTrendline(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Kama - Kaufman Adaptive Moving Average
-func Kama(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Kama(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	constMax := 2.0 / (30.0 + 1.0)
 	constDiff := 2.0/(2.0+1.0) - constMax
@@ -461,9 +461,9 @@ func Kama(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Ma - Moving average
-func Ma(inReal []decimal.Decimal, inTimePeriod int, inMAType MaType) []decimal.Decimal {
+func Ma(inReal []dec.Decimal, inTimePeriod int, inMAType MaType) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	if inTimePeriod == 1 {
 		copy(outReal, inReal)
@@ -494,21 +494,21 @@ func Ma(inReal []decimal.Decimal, inTimePeriod int, inMAType MaType) []decimal.D
 }
 
 // Mama - MESA Adaptive Moving Average (lookback=32)
-func Mama(inReal []decimal.Decimal, inFastLimit decimal.Decimal, inSlowLimit decimal.Decimal) ([]decimal.Decimal, []decimal.Decimal) {
+func Mama(inReal []dec.Decimal, inFastLimit dec.Decimal, inSlowLimit dec.Decimal) ([]dec.Decimal, []dec.Decimal) {
 
-	outMAMA := make([]decimal.Decimal, len(inReal))
-	outFAMA := make([]decimal.Decimal, len(inReal))
+	outMAMA := make([]dec.Decimal, len(inReal))
+	outFAMA := make([]dec.Decimal, len(inReal))
 
 	a := 0.0962
 	b := 0.5769
-	detrenderOdd := make([]decimal.Decimal, 3)
-	detrenderEven := make([]decimal.Decimal, 3)
-	q1Odd := make([]decimal.Decimal, 3)
-	q1Even := make([]decimal.Decimal, 3)
-	jIOdd := make([]decimal.Decimal, 3)
-	jIEven := make([]decimal.Decimal, 3)
-	jQOdd := make([]decimal.Decimal, 3)
-	jQEven := make([]decimal.Decimal, 3)
+	detrenderOdd := make([]dec.Decimal, 3)
+	detrenderEven := make([]dec.Decimal, 3)
+	q1Odd := make([]dec.Decimal, 3)
+	q1Even := make([]dec.Decimal, 3)
+	jIOdd := make([]dec.Decimal, 3)
+	jIEven := make([]dec.Decimal, 3)
+	jQOdd := make([]dec.Decimal, 3)
+	jQEven := make([]dec.Decimal, 3)
 	rad2Deg := 180.0 / (4.0 * math.Atan(1))
 	lookbackTotal := 32
 	startIdx := lookbackTotal
@@ -770,13 +770,13 @@ func Mama(inReal []decimal.Decimal, inFastLimit decimal.Decimal, inSlowLimit dec
 }
 
 // MaVp - Moving average with variable period
-func MaVp(inReal []decimal.Decimal, inPeriods []decimal.Decimal, inMinPeriod int, inMaxPeriod int, inMAType MaType) []decimal.Decimal {
+func MaVp(inReal []dec.Decimal, inPeriods []dec.Decimal, inMinPeriod int, inMaxPeriod int, inMAType MaType) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	startIdx := inMaxPeriod - 1
 	outputSize := len(inReal)
 
-	localPeriodArray := make([]decimal.Decimal, outputSize)
+	localPeriodArray := make([]dec.Decimal, outputSize)
 	for i := startIdx; i < outputSize; i++ {
 		tempInt := int(inPeriods[i])
 		if tempInt < inMinPeriod {
@@ -784,7 +784,7 @@ func MaVp(inReal []decimal.Decimal, inPeriods []decimal.Decimal, inMinPeriod int
 		} else if tempInt > inMaxPeriod {
 			tempInt = inMaxPeriod
 		}
-		localPeriodArray[i] = decimal.Decimal(tempInt)
+		localPeriodArray[i] = dec.Decimal(tempInt)
 	}
 
 	for i := startIdx; i < outputSize; i++ {
@@ -793,7 +793,7 @@ func MaVp(inReal []decimal.Decimal, inPeriods []decimal.Decimal, inMinPeriod int
 			localOutputArray := Ma(inReal, curPeriod, inMAType)
 			outReal[i] = localOutputArray[i]
 			for j := i + 1; j < outputSize; j++ {
-				if localPeriodArray[j] == decimal.Decimal(curPeriod) {
+				if localPeriodArray[j] == dec.Decimal(curPeriod) {
 					localPeriodArray[j] = 0
 					outReal[j] = localOutputArray[j]
 				}
@@ -804,9 +804,9 @@ func MaVp(inReal []decimal.Decimal, inPeriods []decimal.Decimal, inMinPeriod int
 }
 
 // MidPoint - MidPoint over period
-func MidPoint(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func MidPoint(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	nbInitialElementNeeded := inTimePeriod - 1
 	startIdx := nbInitialElementNeeded
 	outIdx := inTimePeriod - 1
@@ -833,9 +833,9 @@ func MidPoint(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // MidPrice - Midpoint Price over period
-func MidPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func MidPrice(inHigh []dec.Decimal, inLow []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inHigh))
+	outReal := make([]dec.Decimal, len(inHigh))
 
 	nbInitialElementNeeded := inTimePeriod - 1
 	startIdx := nbInitialElementNeeded
@@ -865,9 +865,9 @@ func MidPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod in
 
 // Sar - Parabolic SAR
 // real = Sar(high, low, acceleration=0, maximum=0)
-func Sar(inHigh []decimal.Decimal, inLow []decimal.Decimal, inAcceleration decimal.Decimal, inMaximum decimal.Decimal) []decimal.Decimal {
+func Sar(inHigh []dec.Decimal, inLow []dec.Decimal, inAcceleration dec.Decimal, inMaximum dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inHigh))
+	outReal := make([]dec.Decimal, len(inHigh))
 
 	af := inAcceleration
 	if af > inMaximum {
@@ -987,17 +987,17 @@ func Sar(inHigh []decimal.Decimal, inLow []decimal.Decimal, inAcceleration decim
 
 // SarExt - Parabolic SAR - Extended
 // real = SAREXT(high, low, startvalue=0, offsetonreverse=0, accelerationinitlong=0, accelerationlong=0, accelerationmaxlong=0, accelerationinitshort=0, accelerationshort=0, accelerationmaxshort=0)
-func SarExt(inHigh []decimal.Decimal, inLow []decimal.Decimal,
-	inStartValue decimal.Decimal,
-	inOffsetOnReverse decimal.Decimal,
-	inAccelerationInitLong decimal.Decimal,
-	inAccelerationLong decimal.Decimal,
-	inAccelerationMaxLong decimal.Decimal,
-	inAccelerationInitShort decimal.Decimal,
-	inAccelerationShort decimal.Decimal,
-	inAccelerationMaxShort decimal.Decimal) []decimal.Decimal {
+func SarExt(inHigh []dec.Decimal, inLow []dec.Decimal,
+	inStartValue dec.Decimal,
+	inOffsetOnReverse dec.Decimal,
+	inAccelerationInitLong dec.Decimal,
+	inAccelerationLong dec.Decimal,
+	inAccelerationMaxLong dec.Decimal,
+	inAccelerationInitShort dec.Decimal,
+	inAccelerationShort dec.Decimal,
+	inAccelerationMaxShort dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inHigh))
+	outReal := make([]dec.Decimal, len(inHigh))
 
 	startIdx := 1
 	afLong := inAccelerationInitLong
@@ -1150,9 +1150,9 @@ func SarExt(inHigh []decimal.Decimal, inLow []decimal.Decimal,
 }
 
 // Sma - Simple Moving Average
-func Sma(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Sma(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	lookbackTotal := inTimePeriod - 1
 	startIdx := lookbackTotal
@@ -1170,7 +1170,7 @@ func Sma(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		periodTotal += inReal[i]
 		tempReal := periodTotal
 		periodTotal -= inReal[trailingIdx]
-		outReal[outIdx] = tempReal / decimal.Decimal(inTimePeriod)
+		outReal[outIdx] = tempReal / dec.Decimal(inTimePeriod)
 		trailingIdx++
 		i++
 		outIdx++
@@ -1181,14 +1181,14 @@ func Sma(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // T3 - Triple Exponential Moving Average (T3) (lookback=6*inTimePeriod)
-func T3(inReal []decimal.Decimal, inTimePeriod int, inVFactor decimal.Decimal) []decimal.Decimal {
+func T3(inReal []dec.Decimal, inTimePeriod int, inVFactor dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	lookbackTotal := 6 * (inTimePeriod - 1)
 	startIdx := lookbackTotal
 	today := startIdx - lookbackTotal
-	k := 2.0 / (decimal.Decimal(inTimePeriod) + 1.0)
+	k := 2.0 / (dec.Decimal(inTimePeriod) + 1.0)
 	oneMinusK := 1.0 - k
 	tempReal := inReal[today]
 	today++
@@ -1196,14 +1196,14 @@ func T3(inReal []decimal.Decimal, inTimePeriod int, inVFactor decimal.Decimal) [
 		tempReal += inReal[today]
 		today++
 	}
-	e1 := tempReal / decimal.Decimal(inTimePeriod)
+	e1 := tempReal / dec.Decimal(inTimePeriod)
 	tempReal = e1
 	for i := inTimePeriod - 1; i > 0; i-- {
 		e1 = (k * inReal[today]) + (oneMinusK * e1)
 		tempReal += e1
 		today++
 	}
-	e2 := tempReal / decimal.Decimal(inTimePeriod)
+	e2 := tempReal / dec.Decimal(inTimePeriod)
 	tempReal = e2
 	for i := inTimePeriod - 1; i > 0; i-- {
 		e1 = (k * inReal[today]) + (oneMinusK * e1)
@@ -1211,7 +1211,7 @@ func T3(inReal []decimal.Decimal, inTimePeriod int, inVFactor decimal.Decimal) [
 		tempReal += e2
 		today++
 	}
-	e3 := tempReal / decimal.Decimal(inTimePeriod)
+	e3 := tempReal / dec.Decimal(inTimePeriod)
 	tempReal = e3
 	for i := inTimePeriod - 1; i > 0; i-- {
 		e1 = (k * inReal[today]) + (oneMinusK * e1)
@@ -1220,7 +1220,7 @@ func T3(inReal []decimal.Decimal, inTimePeriod int, inVFactor decimal.Decimal) [
 		tempReal += e3
 		today++
 	}
-	e4 := tempReal / decimal.Decimal(inTimePeriod)
+	e4 := tempReal / dec.Decimal(inTimePeriod)
 	tempReal = e4
 	for i := inTimePeriod - 1; i > 0; i-- {
 		e1 = (k * inReal[today]) + (oneMinusK * e1)
@@ -1230,7 +1230,7 @@ func T3(inReal []decimal.Decimal, inTimePeriod int, inVFactor decimal.Decimal) [
 		tempReal += e4
 		today++
 	}
-	e5 := tempReal / decimal.Decimal(inTimePeriod)
+	e5 := tempReal / dec.Decimal(inTimePeriod)
 	tempReal = e5
 	for i := inTimePeriod - 1; i > 0; i-- {
 		e1 = (k * inReal[today]) + (oneMinusK * e1)
@@ -1241,7 +1241,7 @@ func T3(inReal []decimal.Decimal, inTimePeriod int, inVFactor decimal.Decimal) [
 		tempReal += e5
 		today++
 	}
-	e6 := tempReal / decimal.Decimal(inTimePeriod)
+	e6 := tempReal / dec.Decimal(inTimePeriod)
 	for today <= startIdx {
 		e1 = (k * inReal[today]) + (oneMinusK * e1)
 		e2 = (k * e1) + (oneMinusK * e2)
@@ -1275,9 +1275,9 @@ func T3(inReal []decimal.Decimal, inTimePeriod int, inVFactor decimal.Decimal) [
 }
 
 // Tema - Triple Exponential Moving Average
-func Tema(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Tema(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	firstEMA := Ema(inReal, inTimePeriod)
 	secondEMA := Ema(firstEMA[inTimePeriod-1:], inTimePeriod)
 	thirdEMA := Ema(secondEMA[inTimePeriod-1:], inTimePeriod)
@@ -1297,18 +1297,18 @@ func Tema(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Trima - Triangular Moving Average
-func Trima(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Trima(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	lookbackTotal := inTimePeriod - 1
 	startIdx := lookbackTotal
 	outIdx := inTimePeriod - 1
-	var factor decimal.Decimal
+	var factor dec.Decimal
 
 	if inTimePeriod%2 == 1 {
 		i := inTimePeriod >> 1
-		factor = (decimal.Decimal(i) + 1.0) * (decimal.Decimal(i) + 1.0)
+		factor = (dec.Decimal(i) + 1.0) * (dec.Decimal(i) + 1.0)
 		factor = 1.0 / factor
 		trailingIdx := startIdx - lookbackTotal
 		middleIdx := trailingIdx + i
@@ -1354,7 +1354,7 @@ func Trima(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 	} else {
 
 		i := (inTimePeriod >> 1)
-		factor = decimal.Decimal(i) * (decimal.Decimal(i) + 1)
+		factor = dec.Decimal(i) * (dec.Decimal(i) + 1)
 		factor = 1.0 / factor
 		trailingIdx := startIdx - lookbackTotal
 		middleIdx := trailingIdx + i - 1
@@ -1402,9 +1402,9 @@ func Trima(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Wma - Weighted Moving Average
-func Wma(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Wma(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	lookbackTotal := inTimePeriod - 1
 	startIdx := lookbackTotal
@@ -1422,7 +1422,7 @@ func Wma(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 	for inIdx < startIdx {
 		tempReal := inReal[inIdx]
 		periodSub += tempReal
-		periodSum += tempReal * decimal.Decimal(i)
+		periodSum += tempReal * dec.Decimal(i)
 		inIdx++
 		i++
 	}
@@ -1431,9 +1431,9 @@ func Wma(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		tempReal := inReal[inIdx]
 		periodSub += tempReal
 		periodSub -= trailingValue
-		periodSum += tempReal * decimal.Decimal(inTimePeriod)
+		periodSum += tempReal * dec.Decimal(inTimePeriod)
 		trailingValue = inReal[trailingIdx]
-		outReal[outIdx] = periodSum / decimal.Decimal(divider)
+		outReal[outIdx] = periodSum / dec.Decimal(divider)
 		periodSum -= periodSub
 		inIdx++
 		trailingIdx++
@@ -1445,11 +1445,11 @@ func Wma(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 /* Momentum Indicators */
 
 // Adx - Average Directional Movement Index
-func Adx(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Adx(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	lookbackTotal := (2 * inTimePeriod) - 1
 	startIdx := lookbackTotal
 	outIdx := inTimePeriod
@@ -1571,9 +1571,9 @@ func Adx(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.De
 }
 
 // AdxR - Average Directional Movement Index Rating
-func AdxR(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func AdxR(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 	startIdx := (2 * inTimePeriod) - 1
 	tmpadx := Adx(inHigh, inLow, inClose, inTimePeriod)
 	i := startIdx
@@ -1585,7 +1585,7 @@ func AdxR(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.D
 }
 
 // Apo - Absolute Price Oscillator
-func Apo(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inMAType MaType) []decimal.Decimal {
+func Apo(inReal []dec.Decimal, inFastPeriod int, inSlowPeriod int, inMAType MaType) []dec.Decimal {
 
 	if inSlowPeriod < inFastPeriod {
 		inSlowPeriod, inFastPeriod = inFastPeriod, inSlowPeriod
@@ -1601,10 +1601,10 @@ func Apo(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inMAType 
 
 // Aroon - Aroon
 // aroondown, aroonup = AROON(high, low, timeperiod=14)
-func Aroon(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) ([]decimal.Decimal, []decimal.Decimal) {
+func Aroon(inHigh []dec.Decimal, inLow []dec.Decimal, inTimePeriod int) ([]dec.Decimal, []dec.Decimal) {
 
-	outAroonUp := make([]decimal.Decimal, len(inHigh))
-	outAroonDown := make([]decimal.Decimal, len(inHigh))
+	outAroonUp := make([]dec.Decimal, len(inHigh))
+	outAroonDown := make([]dec.Decimal, len(inHigh))
 
 	startIdx := inTimePeriod
 	outIdx := startIdx
@@ -1614,7 +1614,7 @@ func Aroon(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) 
 	highestIdx := -1
 	lowest := 0.0
 	highest := 0.0
-	factor := 100.0 / decimal.Decimal(inTimePeriod)
+	factor := 100.0 / dec.Decimal(inTimePeriod)
 	for today < len(inHigh) {
 		tmp := inLow[today]
 		if lowestIdx < trailingIdx {
@@ -1652,8 +1652,8 @@ func Aroon(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) 
 			highestIdx = today
 			highest = tmp
 		}
-		outAroonUp[outIdx] = factor * decimal.Decimal(inTimePeriod-(today-highestIdx))
-		outAroonDown[outIdx] = factor * decimal.Decimal(inTimePeriod-(today-lowestIdx))
+		outAroonUp[outIdx] = factor * dec.Decimal(inTimePeriod-(today-highestIdx))
+		outAroonDown[outIdx] = factor * dec.Decimal(inTimePeriod-(today-lowestIdx))
 		outIdx++
 		trailingIdx++
 		today++
@@ -1662,9 +1662,9 @@ func Aroon(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) 
 }
 
 // AroonOsc - Aroon Oscillator
-func AroonOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func AroonOsc(inHigh []dec.Decimal, inLow []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inHigh))
+	outReal := make([]dec.Decimal, len(inHigh))
 
 	startIdx := inTimePeriod
 	outIdx := startIdx
@@ -1674,7 +1674,7 @@ func AroonOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod in
 	highestIdx := -1
 	lowest := 0.0
 	highest := 0.0
-	factor := 100.0 / decimal.Decimal(inTimePeriod)
+	factor := 100.0 / dec.Decimal(inTimePeriod)
 	for today < len(inHigh) {
 		tmp := inLow[today]
 		if lowestIdx < trailingIdx {
@@ -1712,7 +1712,7 @@ func AroonOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod in
 			highestIdx = today
 			highest = tmp
 		}
-		aroon := factor * decimal.Decimal(highestIdx-lowestIdx)
+		aroon := factor * dec.Decimal(highestIdx-lowestIdx)
 		outReal[outIdx] = aroon
 		outIdx++
 		trailingIdx++
@@ -1723,9 +1723,9 @@ func AroonOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod in
 }
 
 // Bop - Balance Of Power
-func Bop(inOpen []decimal.Decimal, inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal) []decimal.Decimal {
+func Bop(inOpen []dec.Decimal, inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	for i := 0; i < len(inClose); i++ {
 		tempReal := inHigh[i] - inLow[i]
@@ -1740,9 +1740,9 @@ func Bop(inOpen []decimal.Decimal, inHigh []decimal.Decimal, inLow []decimal.Dec
 }
 
 // Cmo - Chande Momentum Oscillator
-func Cmo(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Cmo(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	lookbackTotal := inTimePeriod
 	startIdx := lookbackTotal
@@ -1767,8 +1767,8 @@ func Cmo(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		}
 		today++
 	}
-	prevLoss /= decimal.Decimal(inTimePeriod)
-	prevGain /= decimal.Decimal(inTimePeriod)
+	prevLoss /= dec.Decimal(inTimePeriod)
+	prevGain /= dec.Decimal(inTimePeriod)
 	if today > startIdx {
 		tempValue1 := prevGain + prevLoss
 		if !(((-(0.00000000000001)) < tempValue1) && (tempValue1 < (0.00000000000001))) {
@@ -1782,15 +1782,15 @@ func Cmo(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 			tempValue1 := inReal[today]
 			tempValue2 := tempValue1 - prevValue
 			prevValue = tempValue1
-			prevLoss *= decimal.Decimal(inTimePeriod - 1)
-			prevGain *= decimal.Decimal(inTimePeriod - 1)
+			prevLoss *= dec.Decimal(inTimePeriod - 1)
+			prevGain *= dec.Decimal(inTimePeriod - 1)
 			if tempValue2 < 0 {
 				prevLoss -= tempValue2
 			} else {
 				prevGain += tempValue2
 			}
-			prevLoss /= decimal.Decimal(inTimePeriod)
-			prevGain /= decimal.Decimal(inTimePeriod)
+			prevLoss /= dec.Decimal(inTimePeriod)
+			prevGain /= dec.Decimal(inTimePeriod)
 			today++
 		}
 	}
@@ -1799,15 +1799,15 @@ func Cmo(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		today++
 		tempValue2 := tempValue1 - prevValue
 		prevValue = tempValue1
-		prevLoss *= decimal.Decimal(inTimePeriod - 1)
-		prevGain *= decimal.Decimal(inTimePeriod - 1)
+		prevLoss *= dec.Decimal(inTimePeriod - 1)
+		prevGain *= dec.Decimal(inTimePeriod - 1)
 		if tempValue2 < 0 {
 			prevLoss -= tempValue2
 		} else {
 			prevGain += tempValue2
 		}
-		prevLoss /= decimal.Decimal(inTimePeriod)
-		prevGain /= decimal.Decimal(inTimePeriod)
+		prevLoss /= dec.Decimal(inTimePeriod)
+		prevGain /= dec.Decimal(inTimePeriod)
 		tempValue1 = prevGain + prevLoss
 		if !(((-(0.00000000000001)) < tempValue1) && (tempValue1 < (0.00000000000001))) {
 			outReal[outIdx] = 100.0 * ((prevGain - prevLoss) / tempValue1)
@@ -1820,14 +1820,14 @@ func Cmo(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Cci - Commodity Channel Index
-func Cci(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Cci(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	circBufferIdx := 0
 	lookbackTotal := inTimePeriod - 1
 	startIdx := lookbackTotal
-	circBuffer := make([]decimal.Decimal, inTimePeriod)
+	circBuffer := make([]dec.Decimal, inTimePeriod)
 	maxIdxCircBuffer := (inTimePeriod - 1)
 	i := startIdx - lookbackTotal
 	if inTimePeriod > 1 {
@@ -1850,14 +1850,14 @@ func Cci(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.De
 			theAverage += circBuffer[j]
 		}
 
-		theAverage /= decimal.Decimal(inTimePeriod)
+		theAverage /= dec.Decimal(inTimePeriod)
 		tempReal2 := 0.0
 		for j := 0; j < inTimePeriod; j++ {
 			tempReal2 += math.Abs(circBuffer[j] - theAverage)
 		}
 		tempReal := lastValue - theAverage
 		if (tempReal != 0.0) && (tempReal2 != 0.0) {
-			outReal[outIdx] = tempReal / (0.015 * (tempReal2 / decimal.Decimal(inTimePeriod)))
+			outReal[outIdx] = tempReal / (0.015 * (tempReal2 / dec.Decimal(inTimePeriod)))
 		} else {
 			outReal[outIdx] = 0.0
 		}
@@ -1875,9 +1875,9 @@ func Cci(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.De
 }
 
 // Dx - Directional Movement Index
-func Dx(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Dx(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	lookbackTotal := 2
 	if inTimePeriod > 1 {
@@ -1943,8 +1943,8 @@ func Dx(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Dec
 		tempReal = inLow[today]
 		diffM := prevLow - tempReal
 		prevLow = tempReal
-		prevMinusDM -= prevMinusDM / decimal.Decimal(inTimePeriod)
-		prevPlusDM -= prevPlusDM / decimal.Decimal(inTimePeriod)
+		prevMinusDM -= prevMinusDM / dec.Decimal(inTimePeriod)
+		prevPlusDM -= prevPlusDM / dec.Decimal(inTimePeriod)
 		if (diffM > 0) && (diffP < diffM) {
 			prevMinusDM += diffM
 		} else if (diffP > 0) && (diffP > diffM) {
@@ -1960,7 +1960,7 @@ func Dx(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Dec
 			tempReal = tempReal2
 		}
 
-		prevTR = prevTR - (prevTR / decimal.Decimal(inTimePeriod)) + tempReal
+		prevTR = prevTR - (prevTR / dec.Decimal(inTimePeriod)) + tempReal
 		prevClose = inClose[today]
 		if !(((-(0.00000000000001)) < prevTR) && (prevTR < (0.00000000000001))) {
 			minusDI := (100.0 * (prevMinusDM / prevTR))
@@ -1981,7 +1981,7 @@ func Dx(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Dec
 
 // Macd - Moving Average Convergence/Divergence
 // unstable period ~= 100
-func Macd(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inSignalPeriod int) ([]decimal.Decimal, []decimal.Decimal, []decimal.Decimal) {
+func Macd(inReal []dec.Decimal, inFastPeriod int, inSlowPeriod int, inSignalPeriod int) ([]dec.Decimal, []dec.Decimal, []dec.Decimal) {
 
 	if inSlowPeriod < inFastPeriod {
 		inSlowPeriod, inFastPeriod = inFastPeriod, inSlowPeriod
@@ -1990,13 +1990,13 @@ func Macd(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inSignal
 	k1 := 0.0
 	k2 := 0.0
 	if inSlowPeriod != 0 {
-		k1 = 2.0 / decimal.Decimal(inSlowPeriod+1)
+		k1 = 2.0 / dec.Decimal(inSlowPeriod+1)
 	} else {
 		inSlowPeriod = 26
 		k1 = 0.075
 	}
 	if inFastPeriod != 0 {
-		k2 = 2.0 / decimal.Decimal(inFastPeriod+1)
+		k2 = 2.0 / dec.Decimal(inFastPeriod+1)
 	} else {
 		inFastPeriod = 12
 		k2 = 0.15
@@ -2012,13 +2012,13 @@ func Macd(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inSignal
 		fastEMABuffer[i] = fastEMABuffer[i] - slowEMABuffer[i]
 	}
 
-	outMACD := make([]decimal.Decimal, len(inReal))
+	outMACD := make([]dec.Decimal, len(inReal))
 	for i := lookbackTotal - 1; i < len(fastEMABuffer); i++ {
 		outMACD[i] = fastEMABuffer[i]
 	}
-	outMACDSignal := ema(outMACD, inSignalPeriod, (2.0 / decimal.Decimal(inSignalPeriod+1)))
+	outMACDSignal := ema(outMACD, inSignalPeriod, (2.0 / dec.Decimal(inSignalPeriod+1)))
 
-	outMACDHist := make([]decimal.Decimal, len(inReal))
+	outMACDHist := make([]dec.Decimal, len(inReal))
 	for i := lookbackTotal; i < len(outMACDHist); i++ {
 		outMACDHist[i] = outMACD[i] - outMACDSignal[i]
 	}
@@ -2028,7 +2028,7 @@ func Macd(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inSignal
 
 // MacdExt - MACD with controllable MA type
 // unstable period ~= 100
-func MacdExt(inReal []decimal.Decimal, inFastPeriod int, inFastMAType MaType, inSlowPeriod int, inSlowMAType MaType, inSignalPeriod int, inSignalMAType MaType) ([]decimal.Decimal, []decimal.Decimal, []decimal.Decimal) {
+func MacdExt(inReal []dec.Decimal, inFastPeriod int, inFastMAType MaType, inSlowPeriod int, inSlowMAType MaType, inSignalPeriod int, inSignalMAType MaType) ([]dec.Decimal, []dec.Decimal, []dec.Decimal) {
 
 	lookbackLargest := 0
 	if inFastPeriod < inSlowPeriod {
@@ -2038,13 +2038,13 @@ func MacdExt(inReal []decimal.Decimal, inFastPeriod int, inFastMAType MaType, in
 	}
 	lookbackTotal := (inSignalPeriod - 1) + (lookbackLargest - 1)
 
-	outMACD := make([]decimal.Decimal, len(inReal))
-	outMACDSignal := make([]decimal.Decimal, len(inReal))
-	outMACDHist := make([]decimal.Decimal, len(inReal))
+	outMACD := make([]dec.Decimal, len(inReal))
+	outMACDSignal := make([]dec.Decimal, len(inReal))
+	outMACDHist := make([]dec.Decimal, len(inReal))
 
 	slowMABuffer := Ma(inReal, inSlowPeriod, inSlowMAType)
 	fastMABuffer := Ma(inReal, inFastPeriod, inFastMAType)
-	tempBuffer1 := make([]decimal.Decimal, len(inReal))
+	tempBuffer1 := make([]dec.Decimal, len(inReal))
 
 	for i := 0; i < len(slowMABuffer); i++ {
 		tempBuffer1[i] = fastMABuffer[i] - slowMABuffer[i]
@@ -2062,14 +2062,14 @@ func MacdExt(inReal []decimal.Decimal, inFastPeriod int, inFastMAType MaType, in
 
 // MacdFix - MACD Fix 12/26
 // unstable period ~= 100
-func MacdFix(inReal []decimal.Decimal, inSignalPeriod int) ([]decimal.Decimal, []decimal.Decimal, []decimal.Decimal) {
+func MacdFix(inReal []dec.Decimal, inSignalPeriod int) ([]dec.Decimal, []dec.Decimal, []dec.Decimal) {
 	return Macd(inReal, 0, 0, inSignalPeriod)
 }
 
 // MinusDI - Minus Directional Indicator
-func MinusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func MinusDI(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	lookbackTotal := 1
 	if inTimePeriod > 1 {
@@ -2164,9 +2164,9 @@ func MinusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decima
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffM > 0) && (diffP < diffM) {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod)) + diffM
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod)) + diffM
 		} else {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod))
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod))
 		}
 		tempReal = prevHigh - prevLow
 		tempReal2 := math.Abs(prevHigh - prevClose)
@@ -2178,7 +2178,7 @@ func MinusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decima
 			tempReal = tempReal2
 		}
 
-		prevTR = prevTR - (prevTR / decimal.Decimal(inTimePeriod)) + tempReal
+		prevTR = prevTR - (prevTR / dec.Decimal(inTimePeriod)) + tempReal
 		prevClose = inClose[today]
 	}
 	if !(((-(0.00000000000001)) < prevTR) && (prevTR < (0.00000000000001))) {
@@ -2196,9 +2196,9 @@ func MinusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decima
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffM > 0) && (diffP < diffM) {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod)) + diffM
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod)) + diffM
 		} else {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod))
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod))
 		}
 		tempReal = prevHigh - prevLow
 		tempReal2 := math.Abs(prevHigh - prevClose)
@@ -2210,7 +2210,7 @@ func MinusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decima
 			tempReal = tempReal2
 		}
 
-		prevTR = prevTR - (prevTR / decimal.Decimal(inTimePeriod)) + tempReal
+		prevTR = prevTR - (prevTR / dec.Decimal(inTimePeriod)) + tempReal
 		prevClose = inClose[today]
 		if !(((-(0.00000000000001)) < prevTR) && (prevTR < (0.00000000000001))) {
 			outReal[outIdx] = (100.0 * (prevMinusDM / prevTR))
@@ -2224,9 +2224,9 @@ func MinusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decima
 }
 
 // MinusDM - Minus Directional Movement
-func MinusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func MinusDM(inHigh []dec.Decimal, inLow []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inHigh))
+	outReal := make([]dec.Decimal, len(inHigh))
 
 	lookbackTotal := 1
 	if inTimePeriod > 1 {
@@ -2287,9 +2287,9 @@ func MinusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffM > 0) && (diffP < diffM) {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod)) + diffM
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod)) + diffM
 		} else {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod))
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod))
 		}
 	}
 	outReal[startIdx] = prevMinusDM
@@ -2303,9 +2303,9 @@ func MinusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffM > 0) && (diffP < diffM) {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod)) + diffM
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod)) + diffM
 		} else {
-			prevMinusDM = prevMinusDM - (prevMinusDM / decimal.Decimal(inTimePeriod))
+			prevMinusDM = prevMinusDM - (prevMinusDM / dec.Decimal(inTimePeriod))
 		}
 		outReal[outIdx] = prevMinusDM
 		outIdx++
@@ -2314,9 +2314,9 @@ func MinusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int
 }
 
 // Mfi - Money Flow Index
-func Mfi(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inVolume []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Mfi(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inVolume []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 	mflowIdx := 0
 	maxIdxMflow := (50 - 1)
 	mflow := make([]moneyFlow, inTimePeriod)
@@ -2424,9 +2424,9 @@ func Mfi(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.De
 }
 
 // Mom - Momentum
-func Mom(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Mom(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	inIdx, outIdx, trailingIdx := inTimePeriod, inTimePeriod, 0
 	for inIdx < len(inReal) {
@@ -2438,9 +2438,9 @@ func Mom(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // PlusDI - Plus Directional Indicator
-func PlusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func PlusDI(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	lookbackTotal := 1
 	if inTimePeriod > 1 {
@@ -2535,9 +2535,9 @@ func PlusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffP > 0) && (diffP > diffM) {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod)) + diffP
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod)) + diffP
 		} else {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod))
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod))
 		}
 		tempReal = prevHigh - prevLow
 		tempReal2 := math.Abs(prevHigh - prevClose)
@@ -2549,7 +2549,7 @@ func PlusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 			tempReal = tempReal2
 		}
 
-		prevTR = prevTR - (prevTR / decimal.Decimal(inTimePeriod)) + tempReal
+		prevTR = prevTR - (prevTR / dec.Decimal(inTimePeriod)) + tempReal
 		prevClose = inClose[today]
 	}
 	if !(((-(0.00000000000001)) < prevTR) && (prevTR < (0.00000000000001))) {
@@ -2567,9 +2567,9 @@ func PlusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffP > 0) && (diffP > diffM) {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod)) + diffP
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod)) + diffP
 		} else {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod))
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod))
 		}
 		tempReal = prevHigh - prevLow
 		tempReal2 := math.Abs(prevHigh - prevClose)
@@ -2581,7 +2581,7 @@ func PlusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 			tempReal = tempReal2
 		}
 
-		prevTR = prevTR - (prevTR / decimal.Decimal(inTimePeriod)) + tempReal
+		prevTR = prevTR - (prevTR / dec.Decimal(inTimePeriod)) + tempReal
 		prevClose = inClose[today]
 		if !(((-(0.00000000000001)) < prevTR) && (prevTR < (0.00000000000001))) {
 			outReal[outIdx] = (100.0 * (prevPlusDM / prevTR))
@@ -2595,9 +2595,9 @@ func PlusDI(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 }
 
 // PlusDM - Plus Directional Movement
-func PlusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func PlusDM(inHigh []dec.Decimal, inLow []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inHigh))
+	outReal := make([]dec.Decimal, len(inHigh))
 
 	lookbackTotal := 1
 	if inTimePeriod > 1 {
@@ -2658,9 +2658,9 @@ func PlusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int)
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffP > 0) && (diffP > diffM) {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod)) + diffP
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod)) + diffP
 		} else {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod))
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod))
 		}
 	}
 	outReal[startIdx] = prevPlusDM
@@ -2674,9 +2674,9 @@ func PlusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int)
 		diffM := prevLow - tempReal
 		prevLow = tempReal
 		if (diffP > 0) && (diffP > diffM) {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod)) + diffP
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod)) + diffP
 		} else {
-			prevPlusDM = prevPlusDM - (prevPlusDM / decimal.Decimal(inTimePeriod))
+			prevPlusDM = prevPlusDM - (prevPlusDM / dec.Decimal(inTimePeriod))
 		}
 		outReal[outIdx] = prevPlusDM
 		outIdx++
@@ -2685,7 +2685,7 @@ func PlusDM(inHigh []decimal.Decimal, inLow []decimal.Decimal, inTimePeriod int)
 }
 
 // Ppo - Percentage Price Oscillator
-func Ppo(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inMAType MaType) []decimal.Decimal {
+func Ppo(inReal []dec.Decimal, inFastPeriod int, inSlowPeriod int, inMAType MaType) []dec.Decimal {
 
 	if inSlowPeriod < inFastPeriod {
 		inSlowPeriod, inFastPeriod = inFastPeriod, inSlowPeriod
@@ -2706,9 +2706,9 @@ func Ppo(inReal []decimal.Decimal, inFastPeriod int, inSlowPeriod int, inMAType 
 }
 
 // Rocp - Rate of change Percentage: (price-prevPrice)/prevPrice
-func Rocp(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Rocp(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	if inTimePeriod < 1 {
 		return outReal
@@ -2734,9 +2734,9 @@ func Rocp(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Roc - Rate of change : ((price/prevPrice)-1)*100
-func Roc(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Roc(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	startIdx := inTimePeriod
 	outIdx := inTimePeriod
@@ -2758,9 +2758,9 @@ func Roc(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Rocr - Rate of change ratio: (price/prevPrice)
-func Rocr(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Rocr(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	startIdx := inTimePeriod
 	outIdx := inTimePeriod
@@ -2782,9 +2782,9 @@ func Rocr(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Rocr100 - Rate of change ratio 100 scale: (price/prevPrice)*100
-func Rocr100(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Rocr100(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	startIdx := inTimePeriod
 	outIdx := inTimePeriod
@@ -2806,9 +2806,9 @@ func Rocr100(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Rsi - Relative strength index
-func Rsi(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Rsi(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	if inTimePeriod < 2 {
 		return outReal
@@ -2836,8 +2836,8 @@ func Rsi(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		}
 	}
 
-	prevLoss /= decimal.Decimal(inTimePeriod)
-	prevGain /= decimal.Decimal(inTimePeriod)
+	prevLoss /= dec.Decimal(inTimePeriod)
+	prevGain /= dec.Decimal(inTimePeriod)
 
 	if today > 0 {
 
@@ -2855,15 +2855,15 @@ func Rsi(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 			tempValue1 = inReal[today]
 			tempValue2 = tempValue1 - prevValue
 			prevValue = tempValue1
-			prevLoss *= decimal.Decimal(inTimePeriod - 1)
-			prevGain *= decimal.Decimal(inTimePeriod - 1)
+			prevLoss *= dec.Decimal(inTimePeriod - 1)
+			prevGain *= dec.Decimal(inTimePeriod - 1)
 			if tempValue2 < 0 {
 				prevLoss -= tempValue2
 			} else {
 				prevGain += tempValue2
 			}
-			prevLoss /= decimal.Decimal(inTimePeriod)
-			prevGain /= decimal.Decimal(inTimePeriod)
+			prevLoss /= dec.Decimal(inTimePeriod)
+			prevGain /= dec.Decimal(inTimePeriod)
 			today++
 		}
 	}
@@ -2874,15 +2874,15 @@ func Rsi(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		today++
 		tempValue2 = tempValue1 - prevValue
 		prevValue = tempValue1
-		prevLoss *= decimal.Decimal(inTimePeriod - 1)
-		prevGain *= decimal.Decimal(inTimePeriod - 1)
+		prevLoss *= dec.Decimal(inTimePeriod - 1)
+		prevGain *= dec.Decimal(inTimePeriod - 1)
 		if tempValue2 < 0 {
 			prevLoss -= tempValue2
 		} else {
 			prevGain += tempValue2
 		}
-		prevLoss /= decimal.Decimal(inTimePeriod)
-		prevGain /= decimal.Decimal(inTimePeriod)
+		prevLoss /= dec.Decimal(inTimePeriod)
+		prevGain /= dec.Decimal(inTimePeriod)
 		tempValue1 = prevGain + prevLoss
 		if !((-0.00000000000001 < tempValue1) && (tempValue1 < 0.00000000000001)) {
 			outReal[outIdx] = 100.0 * (prevGain / tempValue1)
@@ -2896,10 +2896,10 @@ func Rsi(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Stoch - Stochastic
-func Stoch(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inFastKPeriod int, inSlowKPeriod int, inSlowKMAType MaType, inSlowDPeriod int, inSlowDMAType MaType) ([]decimal.Decimal, []decimal.Decimal) {
+func Stoch(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inFastKPeriod int, inSlowKPeriod int, inSlowKMAType MaType, inSlowDPeriod int, inSlowDMAType MaType) ([]dec.Decimal, []dec.Decimal) {
 
-	outSlowK := make([]decimal.Decimal, len(inClose))
-	outSlowD := make([]decimal.Decimal, len(inClose))
+	outSlowK := make([]dec.Decimal, len(inClose))
+	outSlowD := make([]dec.Decimal, len(inClose))
 
 	lookbackK := inFastKPeriod - 1
 	lookbackKSlow := inSlowKPeriod - 1
@@ -2911,7 +2911,7 @@ func Stoch(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.
 	today := trailingIdx + lookbackK
 	lowestIdx, highestIdx := -1, -1
 	diff, highest, lowest := 0.0, 0.0, 0.0
-	tempBuffer := make([]decimal.Decimal, len(inClose)-today+1)
+	tempBuffer := make([]dec.Decimal, len(inClose)-today+1)
 	for today < len(inClose) {
 		tmp := inLow[today]
 		if lowestIdx < trailingIdx {
@@ -2974,10 +2974,10 @@ func Stoch(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.
 }
 
 // StochF - Stochastic Fast
-func StochF(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]decimal.Decimal, []decimal.Decimal) {
+func StochF(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]dec.Decimal, []dec.Decimal) {
 
-	outFastK := make([]decimal.Decimal, len(inClose))
-	outFastD := make([]decimal.Decimal, len(inClose))
+	outFastK := make([]dec.Decimal, len(inClose))
+	outFastD := make([]dec.Decimal, len(inClose))
 
 	lookbackK := inFastKPeriod - 1
 	lookbackFastD := inFastDPeriod - 1
@@ -2988,7 +2988,7 @@ func StochF(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 	today := trailingIdx + lookbackK
 	lowestIdx, highestIdx := -1, -1
 	diff, highest, lowest := 0.0, 0.0, 0.0
-	tempBuffer := make([]decimal.Decimal, (len(inClose) - today + 1))
+	tempBuffer := make([]dec.Decimal, (len(inClose) - today + 1))
 
 	for today < len(inClose) {
 		tmp := inLow[today]
@@ -3052,10 +3052,10 @@ func StochF(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 }
 
 // StochRsi - Stochastic Relative Strength Index
-func StochRsi(inReal []decimal.Decimal, inTimePeriod int, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]decimal.Decimal, []decimal.Decimal) {
+func StochRsi(inReal []dec.Decimal, inTimePeriod int, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]dec.Decimal, []dec.Decimal) {
 
-	outFastK := make([]decimal.Decimal, len(inReal))
-	outFastD := make([]decimal.Decimal, len(inReal))
+	outFastK := make([]dec.Decimal, len(inReal))
+	outFastD := make([]dec.Decimal, len(inReal))
 
 	lookbackSTOCHF := (inFastKPeriod - 1) + (inFastDPeriod - 1)
 	lookbackTotal := inTimePeriod + lookbackSTOCHF
@@ -3072,14 +3072,14 @@ func StochRsi(inReal []decimal.Decimal, inTimePeriod int, inFastKPeriod int, inF
 }
 
 //Trix - 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
-func Trix(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Trix(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
 	tmpReal := Ema(inReal, inTimePeriod)
 	tmpReal = Ema(tmpReal[inTimePeriod-1:], inTimePeriod)
 	tmpReal = Ema(tmpReal[inTimePeriod-1:], inTimePeriod)
 	tmpReal = Roc(tmpReal, 1)
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	for i, j := inTimePeriod, ((inTimePeriod-1)*3)+1; j < len(outReal); i, j = i+1, j+1 {
 		outReal[j] = tmpReal[i]
 	}
@@ -3088,9 +3088,9 @@ func Trix(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // UltOsc - Ultimate Oscillator
-func UltOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod1 int, inTimePeriod2 int, inTimePeriod3 int) []decimal.Decimal {
+func UltOsc(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod1 int, inTimePeriod2 int, inTimePeriod3 int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	usedFlag := make([]int, 3)
 	periods := make([]int, 3)
@@ -3338,9 +3338,9 @@ func UltOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 }
 
 // WillR - Williams' %R
-func WillR(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func WillR(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 	nbInitialElementNeeded := (inTimePeriod - 1)
 	diff := 0.0
 	outIdx := inTimePeriod - 1
@@ -3408,9 +3408,9 @@ func WillR(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.
 /* Volume Indicators */
 
 // Ad - Chaikin A/D Line
-func Ad(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inVolume []decimal.Decimal) []decimal.Decimal {
+func Ad(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inVolume []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	startIdx := 0
 	nbBar := len(inClose) - startIdx
@@ -3434,9 +3434,9 @@ func Ad(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Dec
 }
 
 // AdOsc - Chaikin A/D Oscillator
-func AdOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inVolume []decimal.Decimal, inFastPeriod int, inSlowPeriod int) []decimal.Decimal {
+func AdOsc(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inVolume []dec.Decimal, inFastPeriod int, inSlowPeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	if (inFastPeriod < 2) || (inSlowPeriod < 2) {
 		return outReal
@@ -3452,9 +3452,9 @@ func AdOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.
 	startIdx := lookbackTotal
 	today := startIdx - lookbackTotal
 	ad := 0.0
-	fastk := (2.0 / (decimal.Decimal(inFastPeriod) + 1.0))
+	fastk := (2.0 / (dec.Decimal(inFastPeriod) + 1.0))
 	oneMinusfastk := 1.0 - fastk
-	slowk := (2.0 / (decimal.Decimal(inSlowPeriod) + 1.0))
+	slowk := (2.0 / (dec.Decimal(inSlowPeriod) + 1.0))
 	oneMinusslowk := 1.0 - slowk
 	high := inHigh[today]
 	low := inLow[today]
@@ -3500,9 +3500,9 @@ func AdOsc(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.
 }
 
 // Obv - On Balance Volume
-func Obv(inReal []decimal.Decimal, inVolume []decimal.Decimal) []decimal.Decimal {
+func Obv(inReal []dec.Decimal, inVolume []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	startIdx := 0
 	prevOBV := inVolume[startIdx]
 	prevReal := inReal[startIdx]
@@ -3524,11 +3524,11 @@ func Obv(inReal []decimal.Decimal, inVolume []decimal.Decimal) []decimal.Decimal
 /* Volatility Indicators */
 
 // Atr - Average True Range
-func Atr(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Atr(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 
 	if inTimePeriod < 1 {
 		return outReal
@@ -3558,9 +3558,9 @@ func Atr(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.De
 }
 
 // Natr - Normalized Average True Range
-func Natr(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Natr(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	if inTimePeriod < 1 {
 		return outReal
@@ -3570,7 +3570,7 @@ func Natr(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.D
 		return TRange(inHigh, inLow, inClose)
 	}
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	outIdx := inTimePeriod
 	today := inTimePeriod
 
@@ -3602,9 +3602,9 @@ func Natr(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.D
 }
 
 // TRange - True Range
-func TRange(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal) []decimal.Decimal {
+func TRange(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 
 	startIdx := 1
 	outIdx := startIdx
@@ -3633,9 +3633,9 @@ func TRange(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal
 /* Price Transform */
 
 // AvgPrice - Average Price (o+h+l+c)/4
-func AvgPrice(inOpen []decimal.Decimal, inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal) []decimal.Decimal {
+func AvgPrice(inOpen []dec.Decimal, inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 	outIdx := 0
 	startIdx := 0
 
@@ -3647,9 +3647,9 @@ func AvgPrice(inOpen []decimal.Decimal, inHigh []decimal.Decimal, inLow []decima
 }
 
 // MedPrice - Median Price (h+l)/2
-func MedPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal) []decimal.Decimal {
+func MedPrice(inHigh []dec.Decimal, inLow []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inHigh))
+	outReal := make([]dec.Decimal, len(inHigh))
 	outIdx := 0
 	startIdx := 0
 
@@ -3661,9 +3661,9 @@ func MedPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal) []decimal.Decim
 }
 
 // TypPrice - Typical Price (h+l+c)/3
-func TypPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal) []decimal.Decimal {
+func TypPrice(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 	outIdx := 0
 	startIdx := 0
 
@@ -3675,9 +3675,9 @@ func TypPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decim
 }
 
 // WclPrice - Weighted Close Price
-func WclPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decimal.Decimal) []decimal.Decimal {
+func WclPrice(inHigh []dec.Decimal, inLow []dec.Decimal, inClose []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inClose))
+	outReal := make([]dec.Decimal, len(inClose))
 	outIdx := 0
 	startIdx := 0
 
@@ -3691,20 +3691,20 @@ func WclPrice(inHigh []decimal.Decimal, inLow []decimal.Decimal, inClose []decim
 /* Cycle Indicators */
 
 // HtDcPeriod - Hilbert Transform - Dominant Cycle Period (lookback=32)
-func HtDcPeriod(inReal []decimal.Decimal) []decimal.Decimal {
+func HtDcPeriod(inReal []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	a := 0.0962
 	b := 0.5769
-	detrenderOdd := make([]decimal.Decimal, 3)
-	detrenderEven := make([]decimal.Decimal, 3)
-	q1Odd := make([]decimal.Decimal, 3)
-	q1Even := make([]decimal.Decimal, 3)
-	jIOdd := make([]decimal.Decimal, 3)
-	jIEven := make([]decimal.Decimal, 3)
-	jQOdd := make([]decimal.Decimal, 3)
-	jQEven := make([]decimal.Decimal, 3)
+	detrenderOdd := make([]dec.Decimal, 3)
+	detrenderEven := make([]dec.Decimal, 3)
+	q1Odd := make([]dec.Decimal, 3)
+	q1Even := make([]dec.Decimal, 3)
+	jIOdd := make([]dec.Decimal, 3)
+	jIEven := make([]dec.Decimal, 3)
+	jQOdd := make([]dec.Decimal, 3)
+	jQEven := make([]dec.Decimal, 3)
 	rad2Deg := 180.0 / (4.0 * math.Atan(1))
 	lookbackTotal := 32
 	startIdx := lookbackTotal
@@ -3904,22 +3904,22 @@ func HtDcPeriod(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // HtDcPhase - Hilbert Transform - Dominant Cycle Phase (lookback=63)
-func HtDcPhase(inReal []decimal.Decimal) []decimal.Decimal {
+func HtDcPhase(inReal []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	a := 0.0962
 	b := 0.5769
-	detrenderOdd := make([]decimal.Decimal, 3)
-	detrenderEven := make([]decimal.Decimal, 3)
-	q1Odd := make([]decimal.Decimal, 3)
-	q1Even := make([]decimal.Decimal, 3)
-	jIOdd := make([]decimal.Decimal, 3)
-	jIEven := make([]decimal.Decimal, 3)
-	jQOdd := make([]decimal.Decimal, 3)
-	jQEven := make([]decimal.Decimal, 3)
+	detrenderOdd := make([]dec.Decimal, 3)
+	detrenderEven := make([]dec.Decimal, 3)
+	q1Odd := make([]dec.Decimal, 3)
+	q1Even := make([]dec.Decimal, 3)
+	jIOdd := make([]dec.Decimal, 3)
+	jIEven := make([]dec.Decimal, 3)
+	jQOdd := make([]dec.Decimal, 3)
+	jQEven := make([]dec.Decimal, 3)
 	smoothPriceIdx := 0
 	maxIdxSmoothPrice := (50 - 1)
-	smoothPrice := make([]decimal.Decimal, maxIdxSmoothPrice+1)
+	smoothPrice := make([]dec.Decimal, maxIdxSmoothPrice+1)
 	tempReal := math.Atan(1)
 	rad2Deg := 45.0 / tempReal
 	constDeg2RadBy360 := tempReal * 8.0
@@ -4120,7 +4120,7 @@ func HtDcPhase(inReal []decimal.Decimal) []decimal.Decimal {
 		imagPart := 0.0
 		idx := smoothPriceIdx
 		for i := 0; i < int(DCPeriodInt); i++ {
-			tempReal = (decimal.Decimal(i) * constDeg2RadBy360) / (DCPeriodInt * 1.0)
+			tempReal = (dec.Decimal(i) * constDeg2RadBy360) / (DCPeriodInt * 1.0)
 			tempReal2 = smoothPrice[idx]
 			realPart += math.Sin(tempReal) * tempReal2
 			imagPart += math.Cos(tempReal) * tempReal2
@@ -4163,21 +4163,21 @@ func HtDcPhase(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // HtPhasor - Hibert Transform - Phasor Components (lookback=32)
-func HtPhasor(inReal []decimal.Decimal) ([]decimal.Decimal, []decimal.Decimal) {
+func HtPhasor(inReal []dec.Decimal) ([]dec.Decimal, []dec.Decimal) {
 
-	outInPhase := make([]decimal.Decimal, len(inReal))
-	outQuadrature := make([]decimal.Decimal, len(inReal))
+	outInPhase := make([]dec.Decimal, len(inReal))
+	outQuadrature := make([]dec.Decimal, len(inReal))
 
 	a := 0.0962
 	b := 0.5769
-	detrenderOdd := make([]decimal.Decimal, 3)
-	detrenderEven := make([]decimal.Decimal, 3)
-	q1Odd := make([]decimal.Decimal, 3)
-	q1Even := make([]decimal.Decimal, 3)
-	jIOdd := make([]decimal.Decimal, 3)
-	jIEven := make([]decimal.Decimal, 3)
-	jQOdd := make([]decimal.Decimal, 3)
-	jQEven := make([]decimal.Decimal, 3)
+	detrenderOdd := make([]dec.Decimal, 3)
+	detrenderEven := make([]dec.Decimal, 3)
+	q1Odd := make([]dec.Decimal, 3)
+	q1Even := make([]dec.Decimal, 3)
+	jIOdd := make([]dec.Decimal, 3)
+	jIEven := make([]dec.Decimal, 3)
+	jQOdd := make([]dec.Decimal, 3)
+	jQEven := make([]dec.Decimal, 3)
 	rad2Deg := 180.0 / (4.0 * math.Atan(1))
 	lookbackTotal := 32
 	startIdx := lookbackTotal
@@ -4382,24 +4382,24 @@ func HtPhasor(inReal []decimal.Decimal) ([]decimal.Decimal, []decimal.Decimal) {
 }
 
 // HtSine - Hilbert Transform - SineWave (lookback=63)
-func HtSine(inReal []decimal.Decimal) ([]decimal.Decimal, []decimal.Decimal) {
+func HtSine(inReal []dec.Decimal) ([]dec.Decimal, []dec.Decimal) {
 
-	outSine := make([]decimal.Decimal, len(inReal))
-	outLeadSine := make([]decimal.Decimal, len(inReal))
+	outSine := make([]dec.Decimal, len(inReal))
+	outLeadSine := make([]dec.Decimal, len(inReal))
 
 	a := 0.0962
 	b := 0.5769
-	detrenderOdd := make([]decimal.Decimal, 3)
-	detrenderEven := make([]decimal.Decimal, 3)
-	q1Odd := make([]decimal.Decimal, 3)
-	q1Even := make([]decimal.Decimal, 3)
-	jIOdd := make([]decimal.Decimal, 3)
-	jIEven := make([]decimal.Decimal, 3)
-	jQOdd := make([]decimal.Decimal, 3)
-	jQEven := make([]decimal.Decimal, 3)
+	detrenderOdd := make([]dec.Decimal, 3)
+	detrenderEven := make([]dec.Decimal, 3)
+	q1Odd := make([]dec.Decimal, 3)
+	q1Even := make([]dec.Decimal, 3)
+	jIOdd := make([]dec.Decimal, 3)
+	jIEven := make([]dec.Decimal, 3)
+	jQOdd := make([]dec.Decimal, 3)
+	jQEven := make([]dec.Decimal, 3)
 	smoothPriceIdx := 0
 	maxIdxSmoothPrice := (50 - 1)
-	smoothPrice := make([]decimal.Decimal, maxIdxSmoothPrice+1)
+	smoothPrice := make([]dec.Decimal, maxIdxSmoothPrice+1)
 	tempReal := math.Atan(1)
 	rad2Deg := 45.0 / tempReal
 	deg2Rad := 1.0 / rad2Deg
@@ -4600,7 +4600,7 @@ func HtSine(inReal []decimal.Decimal) ([]decimal.Decimal, []decimal.Decimal) {
 		imagPart := 0.0
 		idx := smoothPriceIdx
 		for i := 0; i < int(DCPeriodInt); i++ {
-			tempReal = (decimal.Decimal(i) * constDeg2RadBy360) / (DCPeriodInt * 1.0)
+			tempReal = (dec.Decimal(i) * constDeg2RadBy360) / (DCPeriodInt * 1.0)
 			tempReal2 = smoothPrice[idx]
 			realPart += math.Sin(tempReal) * tempReal2
 			imagPart += math.Cos(tempReal) * tempReal2
@@ -4644,22 +4644,22 @@ func HtSine(inReal []decimal.Decimal) ([]decimal.Decimal, []decimal.Decimal) {
 }
 
 // HtTrendMode - Hilbert Transform - Trend vs Cycle Mode (lookback=63)
-func HtTrendMode(inReal []decimal.Decimal) []decimal.Decimal {
+func HtTrendMode(inReal []dec.Decimal) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 	a := 0.0962
 	b := 0.5769
-	detrenderOdd := make([]decimal.Decimal, 3)
-	detrenderEven := make([]decimal.Decimal, 3)
-	q1Odd := make([]decimal.Decimal, 3)
-	q1Even := make([]decimal.Decimal, 3)
-	jIOdd := make([]decimal.Decimal, 3)
-	jIEven := make([]decimal.Decimal, 3)
-	jQOdd := make([]decimal.Decimal, 3)
-	jQEven := make([]decimal.Decimal, 3)
+	detrenderOdd := make([]dec.Decimal, 3)
+	detrenderEven := make([]dec.Decimal, 3)
+	q1Odd := make([]dec.Decimal, 3)
+	q1Even := make([]dec.Decimal, 3)
+	jIOdd := make([]dec.Decimal, 3)
+	jIEven := make([]dec.Decimal, 3)
+	jQOdd := make([]dec.Decimal, 3)
+	jQEven := make([]dec.Decimal, 3)
 	smoothPriceIdx := 0
 	maxIdxSmoothPrice := (50 - 1)
-	smoothPrice := make([]decimal.Decimal, maxIdxSmoothPrice+1)
+	smoothPrice := make([]dec.Decimal, maxIdxSmoothPrice+1)
 	iTrend1 := 0.0
 	iTrend2 := 0.0
 	iTrend3 := 0.0
@@ -4873,7 +4873,7 @@ func HtTrendMode(inReal []decimal.Decimal) []decimal.Decimal {
 		imagPart := 0.0
 		idx := smoothPriceIdx
 		for i := 0; i < int(DCPeriodInt); i++ {
-			tempReal = (decimal.Decimal(i) * constDeg2RadBy360) / (DCPeriodInt * 1.0)
+			tempReal = (dec.Decimal(i) * constDeg2RadBy360) / (DCPeriodInt * 1.0)
 			tempReal2 = smoothPrice[idx]
 			realPart += math.Sin(tempReal) * tempReal2
 			imagPart += math.Cos(tempReal) * tempReal2
@@ -4926,7 +4926,7 @@ func HtTrendMode(inReal []decimal.Decimal) []decimal.Decimal {
 			trend = 0
 		}
 		daysInTrend++
-		if decimal.Decimal(daysInTrend) < (0.5 * smoothPeriod) {
+		if dec.Decimal(daysInTrend) < (0.5 * smoothPeriod) {
 			trend = 0
 		}
 		tempReal = dcPhase - prevdcPhase
@@ -4938,7 +4938,7 @@ func HtTrendMode(inReal []decimal.Decimal) []decimal.Decimal {
 			trend = 1
 		}
 		if today >= startIdx {
-			outReal[outIdx] = decimal.Decimal(trend)
+			outReal[outIdx] = dec.Decimal(trend)
 			outIdx++
 		}
 		smoothPriceIdx++
@@ -4954,9 +4954,9 @@ func HtTrendMode(inReal []decimal.Decimal) []decimal.Decimal {
 /* Statistic Functions */
 
 // Beta - Beta
-func Beta(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Beta(inReal0 []dec.Decimal, inReal1 []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal0))
+	outReal := make([]dec.Decimal, len(inReal0))
 
 	x := 0.0
 	y := 0.0
@@ -4995,7 +4995,7 @@ func Beta(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal, inTimePeriod int
 		sY += y
 	}
 	outIdx := inTimePeriod
-	n = decimal.Decimal(inTimePeriod)
+	n = dec.Decimal(inTimePeriod)
 	for ok := true; ok; {
 		tmpReal = inReal0[i]
 		if !((-0.00000000000001 < lastPriceX) && (lastPriceX < 0.00000000000001)) {
@@ -5049,11 +5049,11 @@ func Beta(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal, inTimePeriod int
 }
 
 // Correl - Pearson's Correlation Coefficient (r)
-func Correl(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Correl(inReal0 []dec.Decimal, inReal1 []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal0))
+	outReal := make([]dec.Decimal, len(inReal0))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	lookbackTotal := inTimePeriod - 1
 	startIdx := lookbackTotal
 	trailingIdx := startIdx - lookbackTotal
@@ -5107,11 +5107,11 @@ func Correl(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal, inTimePeriod i
 }
 
 // LinearReg - Linear Regression
-func LinearReg(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func LinearReg(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	lookbackTotal := inTimePeriod
 	startIdx := lookbackTotal
 	outIdx := startIdx - 1
@@ -5127,7 +5127,7 @@ func LinearReg(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		i--
 		tempValue1 := inReal[today-i]
 		sumY += tempValue1
-		sumXY += decimal.Decimal(i) * tempValue1
+		sumXY += dec.Decimal(i) * tempValue1
 	}
 	for today < len(inReal) {
 		//sumX and sumXY are already available for first output value
@@ -5146,11 +5146,11 @@ func LinearReg(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // LinearRegAngle - Linear Regression Angle
-func LinearRegAngle(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func LinearRegAngle(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	lookbackTotal := inTimePeriod
 	startIdx := lookbackTotal
 	outIdx := startIdx - 1
@@ -5166,7 +5166,7 @@ func LinearRegAngle(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decima
 		i--
 		tempValue1 := inReal[today-i]
 		sumY += tempValue1
-		sumXY += decimal.Decimal(i) * tempValue1
+		sumXY += dec.Decimal(i) * tempValue1
 	}
 	for today < len(inReal) {
 		//sumX and sumXY are already available for first output value
@@ -5184,11 +5184,11 @@ func LinearRegAngle(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decima
 }
 
 // LinearRegIntercept - Linear Regression Intercept
-func LinearRegIntercept(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func LinearRegIntercept(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	lookbackTotal := inTimePeriod
 	startIdx := lookbackTotal
 	outIdx := startIdx - 1
@@ -5204,7 +5204,7 @@ func LinearRegIntercept(inReal []decimal.Decimal, inTimePeriod int) []decimal.De
 		i--
 		tempValue1 := inReal[today-i]
 		sumY += tempValue1
-		sumXY += decimal.Decimal(i) * tempValue1
+		sumXY += dec.Decimal(i) * tempValue1
 	}
 	for today < len(inReal) {
 		//sumX and sumXY are already available for first output value
@@ -5222,11 +5222,11 @@ func LinearRegIntercept(inReal []decimal.Decimal, inTimePeriod int) []decimal.De
 }
 
 // LinearRegSlope - Linear Regression Slope
-func LinearRegSlope(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func LinearRegSlope(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	lookbackTotal := inTimePeriod
 	startIdx := lookbackTotal
 	outIdx := startIdx - 1
@@ -5242,7 +5242,7 @@ func LinearRegSlope(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decima
 		i--
 		tempValue1 := inReal[today-i]
 		sumY += tempValue1
-		sumXY += decimal.Decimal(i) * tempValue1
+		sumXY += dec.Decimal(i) * tempValue1
 	}
 	for today < len(inReal) {
 		//sumX and sumXY are already available for first output value
@@ -5259,7 +5259,7 @@ func LinearRegSlope(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decima
 }
 
 // StdDev - Standard Deviation
-func StdDev(inReal []decimal.Decimal, inTimePeriod int, inNbDev decimal.Decimal) []decimal.Decimal {
+func StdDev(inReal []dec.Decimal, inTimePeriod int, inNbDev dec.Decimal) []dec.Decimal {
 
 	outReal := Var(inReal, inTimePeriod)
 
@@ -5286,11 +5286,11 @@ func StdDev(inReal []decimal.Decimal, inTimePeriod int, inNbDev decimal.Decimal)
 }
 
 // Tsf - Time Series Forecast
-func Tsf(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Tsf(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
-	inTimePeriodF := decimal.Decimal(inTimePeriod)
+	inTimePeriodF := dec.Decimal(inTimePeriod)
 	lookbackTotal := inTimePeriod
 	startIdx := lookbackTotal
 	outIdx := startIdx - 1
@@ -5306,7 +5306,7 @@ func Tsf(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		i--
 		tempValue1 := inReal[today-i]
 		sumY += tempValue1
-		sumXY += decimal.Decimal(i) * tempValue1
+		sumXY += dec.Decimal(i) * tempValue1
 	}
 	for today < len(inReal) {
 		//sumX and sumXY are already available for first output value
@@ -5325,9 +5325,9 @@ func Tsf(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Var - Variance
-func Var(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Var(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	nbInitialElementNeeded := inTimePeriod - 1
 	startIdx := nbInitialElementNeeded
@@ -5350,8 +5350,8 @@ func Var(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 		periodTotal1 += tempReal
 		tempReal *= tempReal
 		periodTotal2 += tempReal
-		meanValue1 := periodTotal1 / decimal.Decimal(inTimePeriod)
-		meanValue2 := periodTotal2 / decimal.Decimal(inTimePeriod)
+		meanValue1 := periodTotal1 / dec.Decimal(inTimePeriod)
+		meanValue2 := periodTotal2 / dec.Decimal(inTimePeriod)
 		tempReal = inReal[trailingIdx]
 		periodTotal1 -= tempReal
 		tempReal *= tempReal
@@ -5368,8 +5368,8 @@ func Var(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 /* Math Transform Functions */
 
 // Acos - Vector Trigonometric ACOS
-func Acos(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Acos(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Acos(inReal[i])
 	}
@@ -5377,8 +5377,8 @@ func Acos(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Asin - Vector Trigonometric ASIN
-func Asin(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Asin(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Asin(inReal[i])
 	}
@@ -5386,8 +5386,8 @@ func Asin(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Atan - Vector Trigonometric ATAN
-func Atan(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Atan(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Atan(inReal[i])
 	}
@@ -5395,8 +5395,8 @@ func Atan(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Ceil - Vector CEIL
-func Ceil(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Ceil(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Ceil(inReal[i])
 	}
@@ -5404,8 +5404,8 @@ func Ceil(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Cos - Vector Trigonometric COS
-func Cos(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Cos(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Cos(inReal[i])
 	}
@@ -5413,8 +5413,8 @@ func Cos(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Cosh - Vector Trigonometric COSH
-func Cosh(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Cosh(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Cosh(inReal[i])
 	}
@@ -5422,8 +5422,8 @@ func Cosh(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Exp - Vector atrithmetic EXP
-func Exp(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Exp(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Exp(inReal[i])
 	}
@@ -5431,8 +5431,8 @@ func Exp(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Floor - Vector FLOOR
-func Floor(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Floor(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Floor(inReal[i])
 	}
@@ -5440,8 +5440,8 @@ func Floor(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Ln - Vector natural log LN
-func Ln(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Ln(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Log(inReal[i])
 	}
@@ -5449,8 +5449,8 @@ func Ln(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Log10 - Vector LOG10
-func Log10(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Log10(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Log10(inReal[i])
 	}
@@ -5458,8 +5458,8 @@ func Log10(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Sin - Vector Trigonometric SIN
-func Sin(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Sin(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Sin(inReal[i])
 	}
@@ -5467,8 +5467,8 @@ func Sin(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Sinh - Vector Trigonometric SINH
-func Sinh(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Sinh(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Sinh(inReal[i])
 	}
@@ -5476,8 +5476,8 @@ func Sinh(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Sqrt - Vector SQRT
-func Sqrt(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Sqrt(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Sqrt(inReal[i])
 	}
@@ -5485,8 +5485,8 @@ func Sqrt(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Tan - Vector Trigonometric TAN
-func Tan(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Tan(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Tan(inReal[i])
 	}
@@ -5494,8 +5494,8 @@ func Tan(inReal []decimal.Decimal) []decimal.Decimal {
 }
 
 // Tanh - Vector Trigonometric TANH
-func Tanh(inReal []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal))
+func Tanh(inReal []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal))
 	for i := 0; i < len(inReal); i++ {
 		outReal[i] = math.Tanh(inReal[i])
 	}
@@ -5505,8 +5505,8 @@ func Tanh(inReal []decimal.Decimal) []decimal.Decimal {
 /* Math Operator Functions */
 
 // Add - Vector arithmetic addition
-func Add(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal0))
+func Add(inReal0 []dec.Decimal, inReal1 []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal0))
 	for i := 0; i < len(inReal0); i++ {
 		outReal[i] = inReal0[i] + inReal1[i]
 	}
@@ -5514,8 +5514,8 @@ func Add(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decimal
 }
 
 // Div - Vector arithmetic division
-func Div(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal0))
+func Div(inReal0 []dec.Decimal, inReal1 []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal0))
 	for i := 0; i < len(inReal0); i++ {
 		outReal[i] = inReal0[i] / inReal1[i]
 	}
@@ -5523,9 +5523,9 @@ func Div(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decimal
 }
 
 // Max - Highest value over a period
-func Max(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Max(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	if inTimePeriod < 2 {
 		return outReal
@@ -5569,9 +5569,9 @@ func Max(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // MaxIndex - Index of highest value over a specified period
-func MaxIndex(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func MaxIndex(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	if inTimePeriod < 2 {
 		return outReal
@@ -5602,7 +5602,7 @@ func MaxIndex(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 			highestIdx = today
 			highest = tmp
 		}
-		outReal[outIdx] = decimal.Decimal(highestIdx)
+		outReal[outIdx] = dec.Decimal(highestIdx)
 		outIdx++
 		trailingIdx++
 		today++
@@ -5612,9 +5612,9 @@ func MaxIndex(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // Min - Lowest value over a period
-func Min(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Min(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	if inTimePeriod < 2 {
 		return outReal
@@ -5657,9 +5657,9 @@ func Min(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // MinIndex - Index of lowest value over a specified period
-func MinIndex(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func MinIndex(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	if inTimePeriod < 2 {
 		return outReal
@@ -5690,7 +5690,7 @@ func MinIndex(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 			lowestIdx = today
 			lowest = tmp
 		}
-		outReal[outIdx] = decimal.Decimal(lowestIdx)
+		outReal[outIdx] = dec.Decimal(lowestIdx)
 		outIdx++
 		trailingIdx++
 		today++
@@ -5699,10 +5699,10 @@ func MinIndex(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
 }
 
 // MinMax - Lowest and highest values over a specified period
-func MinMax(inReal []decimal.Decimal, inTimePeriod int) ([]decimal.Decimal, []decimal.Decimal) {
+func MinMax(inReal []dec.Decimal, inTimePeriod int) ([]dec.Decimal, []dec.Decimal) {
 
-	outMin := make([]decimal.Decimal, len(inReal))
-	outMax := make([]decimal.Decimal, len(inReal))
+	outMin := make([]dec.Decimal, len(inReal))
+	outMax := make([]dec.Decimal, len(inReal))
 
 	nbInitialElementNeeded := (inTimePeriod - 1)
 	startIdx := nbInitialElementNeeded
@@ -5759,10 +5759,10 @@ func MinMax(inReal []decimal.Decimal, inTimePeriod int) ([]decimal.Decimal, []de
 }
 
 // MinMaxIndex - Indexes of lowest and highest values over a specified period
-func MinMaxIndex(inReal []decimal.Decimal, inTimePeriod int) ([]decimal.Decimal, []decimal.Decimal) {
+func MinMaxIndex(inReal []dec.Decimal, inTimePeriod int) ([]dec.Decimal, []dec.Decimal) {
 
-	outMinIdx := make([]decimal.Decimal, len(inReal))
-	outMaxIdx := make([]decimal.Decimal, len(inReal))
+	outMinIdx := make([]dec.Decimal, len(inReal))
+	outMaxIdx := make([]dec.Decimal, len(inReal))
 
 	nbInitialElementNeeded := (inTimePeriod - 1)
 	startIdx := nbInitialElementNeeded
@@ -5809,8 +5809,8 @@ func MinMaxIndex(inReal []decimal.Decimal, inTimePeriod int) ([]decimal.Decimal,
 			lowestIdx = today
 			lowest = tmpLow
 		}
-		outMaxIdx[outIdx] = decimal.Decimal(highestIdx)
-		outMinIdx[outIdx] = decimal.Decimal(lowestIdx)
+		outMaxIdx[outIdx] = dec.Decimal(highestIdx)
+		outMinIdx[outIdx] = dec.Decimal(lowestIdx)
 		outIdx++
 		trailingIdx++
 		today++
@@ -5819,8 +5819,8 @@ func MinMaxIndex(inReal []decimal.Decimal, inTimePeriod int) ([]decimal.Decimal,
 }
 
 // Mult - Vector arithmetic multiply
-func Mult(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal0))
+func Mult(inReal0 []dec.Decimal, inReal1 []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal0))
 	for i := 0; i < len(inReal0); i++ {
 		outReal[i] = inReal0[i] * inReal1[i]
 	}
@@ -5828,8 +5828,8 @@ func Mult(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decima
 }
 
 // Sub - Vector arithmetic subtraction
-func Sub(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decimal {
-	outReal := make([]decimal.Decimal, len(inReal0))
+func Sub(inReal0 []dec.Decimal, inReal1 []dec.Decimal) []dec.Decimal {
+	outReal := make([]dec.Decimal, len(inReal0))
 	for i := 0; i < len(inReal0); i++ {
 		outReal[i] = inReal0[i] - inReal1[i]
 	}
@@ -5837,9 +5837,9 @@ func Sub(inReal0 []decimal.Decimal, inReal1 []decimal.Decimal) []decimal.Decimal
 }
 
 // Sum - Vector summation
-func Sum(inReal []decimal.Decimal, inTimePeriod int) []decimal.Decimal {
+func Sum(inReal []dec.Decimal, inTimePeriod int) []dec.Decimal {
 
-	outReal := make([]decimal.Decimal, len(inReal))
+	outReal := make([]dec.Decimal, len(inReal))
 
 	lookbackTotal := inTimePeriod - 1
 	startIdx := lookbackTotal
